@@ -161,7 +161,7 @@ def main() -> int:
 Status: Verified (run {args.date}). Independent re-implementation on public data (UCI Online Retail II, CC BY 4.0).
 
 **These are offline proxies computed on historical purchases. They are not the deployed engagement and revenue
-gains.** The 15% engagement and 10% revenue figures on the CV are Reported results from an earlier deployment and
+gains.** The 15% engagement and 10% revenue figures on the CV are Reported (earlier deployment) results and
 are not reproduced here.
 
 - Started: {started.strftime('%Y-%m-%d %H:%M UTC')}

@@ -6,7 +6,7 @@
 
 ## Overview
 
-Recommendation approaches for an online store, with reported gains in user engagement and sales revenue. The reported gains (15% higher user engagement and a 10% improvement in sales revenue, as stated on the CV) come from an earlier deployment. They are **Reported** results: they are not reproduced, confirmed or contradicted by this repository, which has no access to that system, its data or its code.
+Recommendation approaches for an online store, with reported gains in user engagement and sales revenue. The reported gains (15% higher user engagement and a 10% improvement in sales revenue, as stated on the CV) come from an earlier deployment. They are labelled **Reported (earlier deployment)**: they are not reproduced, confirmed or contradicted by this repository, which has no access to that system, its data or its code.
 
 This repository is an **independent re-implementation on public data** (UCI Online Retail II). It compares three recommendation approaches (popularity baseline, item-based collaborative filtering, implicit-feedback matrix factorisation) with tests, a temporal evaluation protocol and a small interactive demo. For each approach it reports *offline proxies* for engagement and revenue, computed on historical purchases. These proxies show the direction in which the approaches differ; they are not the deployed engagement and revenue gains.
 
@@ -23,10 +23,10 @@ Verified (run 2026-10-14), offline proxies on public data, 2,191 evaluation cust
 
 Item-based CF is clearly better than popularity on hit rate (+24%, interval +16% to +32%) but its revenue proxy is not distinguishable from the baseline (-1.7%, interval -10.9% to +7.8%).
 
-| Reported on the CV (earlier deployment) | Status |
+| Reported on the CV | Status |
 |---|---|
-| 15% higher user engagement | Reported (CV). Not reproduced here. |
-| 10% improvement in sales revenue | Reported (CV). Not reproduced here. |
+| 15% higher user engagement | Reported (earlier deployment). Not reproduced here. |
+| 10% improvement in sales revenue | Reported (earlier deployment). Not reproduced here. |
 
 ## Demo
 
@@ -83,7 +83,7 @@ Choices that matter for the numbers:
 
 ## Results
 
-Independent re-implementation on public data. The 15% engagement and 10% revenue figures on the CV are reported results from an earlier deployment and are not reproduced here. Everything below is an offline measurement on historical purchases (offline proxies, not the deployed engagement and revenue gains) and says nothing about live engagement or sales.
+Independent re-implementation on public data. The 15% engagement and 10% revenue figures on the CV are Reported (earlier deployment) results and are not reproduced here. Everything below is an offline measurement on historical purchases (offline proxies, not the deployed engagement and revenue gains) and says nothing about live engagement or sales.
 
 Mean ± sample sd over 5 seeds (42 to 46), k = 10, 2,191 evaluation customers.
 
