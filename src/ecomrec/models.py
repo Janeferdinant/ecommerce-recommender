@@ -13,6 +13,8 @@ deterministic.
 """
 from __future__ import annotations
 
+from typing import Any, Self
+
 import numpy as np
 import pandas as pd
 from scipy import sparse
@@ -22,7 +24,7 @@ class _Base:
     name = "base"
 
     # ---- fitting ---------------------------------------------------------
-    def fit(self, train: pd.DataFrame):
+    def fit(self, train: pd.DataFrame) -> Self:
         self.users = sorted(train["user"].unique())
         self.items = sorted(train["item"].unique())
         self.user_index = {u: i for i, u in enumerate(self.users)}
@@ -41,32 +43,32 @@ class _Base:
         self._fit()
         return self
 
-    def _fit(self):
+    def _fit(self) -> None:
         pass
 
     # ---- lookups ---------------------------------------------------------
-    def _seen_idx(self, user) -> np.ndarray:
+    def _seen_idx(self, user: Any) -> np.ndarray:
         row = self.user_index[user]
         return self.counts.indices[self.counts.indptr[row] : self.counts.indptr[row + 1]]
 
-    def seen_items(self, user) -> list:
+    def seen_items(self, user: Any) -> list[Any]:
         return [self.items[i] for i in self._seen_idx(user)]
 
-    def count(self, user, item) -> float:
+    def count(self, user: Any, item: Any) -> float:
         return float(self.counts[self.user_index[user], self.item_index[item]])
 
     # ---- scoring ---------------------------------------------------------
     def _scores_from_idx(self, idx: np.ndarray, counts: np.ndarray) -> np.ndarray:
         raise NotImplementedError
 
-    def _top(self, scores: np.ndarray, exclude: np.ndarray, k: int) -> list:
+    def _top(self, scores: np.ndarray, exclude: np.ndarray, k: int) -> list[Any]:
         scores = np.array(scores, dtype=np.float64)
         scores[exclude] = -np.inf
         # primary: score desc; then popularity desc; then item order
         order = np.lexsort((np.arange(len(scores)), -self.buyers, -scores))
         return [self.items[i] for i in order[:k] if np.isfinite(scores[i])]
 
-    def recommend(self, user, k: int = 10) -> list:
+    def recommend(self, user: Any, k: int = 10) -> list[Any]:
         if user not in self.user_index:
             return self.ranking[:k]
         row = self.user_index[user]
@@ -74,16 +76,16 @@ class _Base:
         idx, cnt = self.counts.indices[lo:hi], self.counts.data[lo:hi]
         return self._top(self._scores_from_idx(idx, cnt), idx, k)
 
-    def recommend_for_items(self, items, k: int = 10) -> list:
+    def recommend_for_items(self, items: Any, k: int = 10) -> list[Any]:
         """Recommend for an ad-hoc basket of item ids (the demo's picker mode)."""
         idx = np.array(sorted(self.item_index[i] for i in items), dtype=np.int64)
         return self._top(self._scores_from_idx(idx, np.ones(len(idx))), idx, k)
 
-    def explain(self, user, item):
+    def explain(self, user: Any, item: Any) -> Any | None:
         """The purchased item that best 'explains' the recommendation, or None."""
         return None
 
-    def _best_source(self, seen_idx: np.ndarray, target: int, sim_row: np.ndarray):
+    def _best_source(self, seen_idx: np.ndarray, target: int, sim_row: np.ndarray) -> Any | None:
         if len(seen_idx) == 0:
             return None
         sims = sim_row[seen_idx]
@@ -94,7 +96,7 @@ class _Base:
 class PopularityModel(_Base):
     name = "popularity"
 
-    def _scores_from_idx(self, idx, counts):
+    def _scores_from_idx(self, idx: np.ndarray, counts: np.ndarray) -> np.ndarray:
         return self.buyers.astype(np.float64)
 
 
@@ -103,7 +105,7 @@ class ItemKNNModel(_Base):
 
     name = "itemknn"
 
-    def _fit(self):
+    def _fit(self) -> None:
         binary = (self.counts > 0).astype(np.float32)
         co = (binary.T @ binary).toarray()
         norms = np.sqrt(np.diag(co))
@@ -112,12 +114,12 @@ class ItemKNNModel(_Base):
         np.fill_diagonal(sim, 0.0)
         self.similarity = sim.astype(np.float32)
 
-    def _scores_from_idx(self, idx, counts):
+    def _scores_from_idx(self, idx: np.ndarray, counts: np.ndarray) -> np.ndarray:
         if len(idx) == 0:
             return np.zeros(len(self.items))
         return self.similarity[idx].sum(axis=0)
 
-    def explain(self, user, item):
+    def explain(self, user: Any, item: Any) -> Any | None:
         j = self.item_index[item]
         return self._best_source(self._seen_idx(user), j, self.similarity[:, j])
 
@@ -141,10 +143,10 @@ class ALSModel(_Base):
         self.alpha = alpha
         self.seed = seed
 
-    def _solve_row(self, fixed, fixed_gram, idx, strength):
+    def _solve_row(self, fixed: np.ndarray, gram: np.ndarray, idx: np.ndarray, strength: np.ndarray) -> np.ndarray:
         f = fixed[idx]
         w = self.alpha * strength
-        a = fixed_gram + (f.T * w) @ f + self.reg * np.eye(self.factors)
+        a = gram + (f.T * w) @ f + self.reg * np.eye(self.factors)
         b = (1.0 + w) @ f
         return np.linalg.solve(a, b)
 
@@ -157,7 +159,7 @@ class ALSModel(_Base):
                 out[r] = self._solve_row(fixed, gram, ratings.indices[lo:hi], ratings.data[lo:hi])
         return out
 
-    def _fit(self):
+    def _fit(self) -> None:
         rng = np.random.default_rng(self.seed)
         strength = self.counts.copy()
         strength.data = np.log1p(strength.data)
@@ -172,22 +174,22 @@ class ALSModel(_Base):
         norms[norms == 0] = 1.0
         self._unit = self.item_factors / norms[:, None]
 
-    def fold_in(self, item_idx, counts) -> np.ndarray:
+    def fold_in(self, item_idx: Any, counts: Any) -> np.ndarray:
         """User vector for an ad-hoc basket (same maths as the last training step)."""
         idx = np.asarray(item_idx, dtype=np.int64)
         return self._solve_row(self.item_factors, self.gram, idx, np.log1p(np.asarray(counts, dtype=np.float64)))
 
-    def _scores_from_idx(self, idx, counts):
+    def _scores_from_idx(self, idx: np.ndarray, counts: np.ndarray) -> np.ndarray:
         if len(idx) == 0:
             return np.zeros(len(self.items))
         return self.item_factors @ self.fold_in(idx, counts)
 
-    def recommend(self, user, k: int = 10) -> list:
+    def recommend(self, user: Any, k: int = 10) -> list[Any]:
         if user not in self.user_index:
             return self.ranking[:k]
         row = self.user_index[user]
         return self._top(self.item_factors @ self.user_factors[row], self._seen_idx(user), k)
 
-    def explain(self, user, item):
+    def explain(self, user: Any, item: Any) -> Any | None:
         j = self.item_index[item]
         return self._best_source(self._seen_idx(user), j, self._unit @ self._unit[j])
