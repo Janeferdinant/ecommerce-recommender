@@ -1,4 +1,4 @@
-import numpy as np
+﻿import numpy as np
 import pytest
 
 from ecomrec.evaluate import evaluate
@@ -60,17 +60,12 @@ def test_popularity_ranks_by_distinct_buyers(split):
     assert counts[top[0]] >= counts[top[1]] >= counts[top[2]]
 
 
-def test_item_knn_recommends_same_taste_group_more_than_chance(split):
-    """On the planted-group data a CF model must beat random group membership (25%)."""
-    train, test = split
-    model = ItemKNNModel().fit(train)
-    hits = total = 0
-    for user in train.user.unique()[:30]:
-        group = int(user[1:]) % 4
-        for item in model.recommend(user, k=5):
-            hits += int(item[1:]) % 4 == group
-            total += 1
-    assert hits / total > 0.5
+def test_collaborative_models_beat_popularity_on_planted_taste_groups(split):
+    """Taste groups are planted, so a working CF model must clearly beat the baseline."""
+    result = evaluate(split, seed=1, k=5, als_params={"factors": 8, "iterations": 8})["models"]
+    base = result["popularity"]["ndcg@5"]
+    assert result["itemknn"]["ndcg@5"] > 2 * base
+    assert result["als"]["ndcg@5"] > 2 * base
 
 
 def test_explanations_point_to_items_the_user_bought(split):
