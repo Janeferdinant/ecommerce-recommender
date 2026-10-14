@@ -163,8 +163,8 @@ def main() -> int:
     docs = ROOT / "docs"
     docs.mkdir(exist_ok=True)
     text = json.dumps(data, separators=(",", ":"))
-    (docs / "demo-data.json").write_text(text + "\n", encoding="utf-8")
-    (docs / "demo-data.js").write_text("window.DEMO_DATA=" + text + ";\n", encoding="utf-8")
+    (docs / "demo-data.json").write_text(text + "\n", encoding="utf-8", newline="\n")
+    (docs / "demo-data.js").write_text("window.DEMO_DATA=" + text + ";\n", encoding="utf-8", newline="\n")
     print(f"items={len(item_ids)} customers={len(customers)} bytes={len(text):,}")
     return 0
 
