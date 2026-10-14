@@ -24,6 +24,8 @@ Catalogue coverage and the other ranking metrics are in the detailed Results tab
 
 Item-based CF is clearly better than popularity on hit rate (+24%, interval +16% to +32%) but its revenue proxy is not distinguishable from the baseline (-1.7%, interval -10.9% to +7.8%).
 
+Observation, not a tested cause: item-based CF recommends far more of the catalogue than popularity does (coverage 17.7% against 1.8%), which is consistent with it favouring niche items over best sellers, and in this run that did not raise the revenue proxy.
+
 | Reported on the CV | Status |
 |---|---|
 | 15% higher user engagement | Reported (earlier deployment). Not reproduced here. |
