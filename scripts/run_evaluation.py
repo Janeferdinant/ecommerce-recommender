@@ -109,7 +109,7 @@ Status: Verified (run {args.date}). Independent re-implementation on public data
 (UCI Online Retail II, CC BY 4.0). These are offline ranking metrics, not business impact.
 
 - Started: {started.strftime('%Y-%m-%d %H:%M UTC')}
-- Command: {fence}python scripts/run_evaluation.py --seed {args.seed} --date {args.date}{fence}
+- Command: `python scripts/run_evaluation.py --seed {args.seed} --date {args.date}`
 - Code version: {payload['code_version']}
 - Environment: Python {platform.python_version()}, numpy {np.__version__}, pandas {pd.__version__}, scipy {scipy.__version__}, CPU only, {platform.system()}
 - Seed: {args.seed} (ALS initialisation; no other randomness in the pipeline)

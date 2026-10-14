@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-14",
+  "started_utc": "2026-10-14T04:00:37+00:00",
+  "seed": 42,
+  "k": 10,
+  "test_fraction": 0.2,
+  "max_users": null,
+  "als_hyperparameters": {
+    "factors": 32,
+    "iterations": 15,
+    "reg": 0.1,
+    "alpha": 10.0
+  },
+  "data": {
+    "interactions": 766079,
+    "customers": 5852,
+    "products": 4619,
+    "first_basket": "2009-12-01 07:45:00",
+    "last_basket": "2011-12-09 12:50:00",
+    "cutoff": "2011-09-12 12:27:00",
+    "train_interactions": 612817,
+    "test_interactions": 153262,
+    "train_customers": 5267,
+    "train_products": 4452
+  },
+  "result": {
+    "k": 10,
+    "seed": 42,
+    "n_eval_users": 2191,
+    "n_eligible_users": 2191,
+    "models": {
+      "popularity": {
+        "precision@10": 0.040666362391602005,
+        "recall@10": 0.016734859844419386,
+        "ndcg@10": 0.043428384288774595
+      },
+      "itemknn": {
+        "precision@10": 0.05992697398448196,
+        "recall@10": 0.03074648374659163,
+        "ndcg@10": 0.06821956184584031
+      },
+      "als": {
+        "precision@10": 0.06280237334550433,
+        "recall@10": 0.03291499161859832,
+        "ndcg@10": 0.07134259556984873
+      }
+    }
+  },
+  "seconds": {
+    "load_and_clean": 0.5,
+    "fit_and_evaluate": 19.3
+  },
+  "code_version": "9ac97d3"
+}
