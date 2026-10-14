@@ -24,8 +24,8 @@ def make_interactions(n_users=60, n_items=40, n_groups=4, seed=0):
             if rng.random() < 0.3:
                 basket.add(int(rng.choice(other_items)))
             for item in basket:
-                rows.append((f"u{u}", f"i{item}", ts))
-    df = pd.DataFrame(rows, columns=["user", "item", "ts"])
+                rows.append((f"u{u}", f"i{item}", ts, 1.0 + (item % 5) * 2.5))
+    df = pd.DataFrame(rows, columns=["user", "item", "ts", "price"])
     return df.drop_duplicates().reset_index(drop=True)
 
 

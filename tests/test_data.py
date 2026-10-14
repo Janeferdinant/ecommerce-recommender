@@ -30,9 +30,16 @@ def test_cleaning_drops_cancellations_fees_anonymous_and_invalid_rows():
 
 def test_interactions_have_one_row_per_customer_item_basket():
     inter = to_interactions(clean_transactions(raw_frame()))
-    assert list(inter.columns) == ["user", "item", "ts"]
+    assert list(inter.columns) == ["user", "item", "ts", "price"]
     assert len(inter) == 3  # 85123A (two lines, one basket), 71053, and 22423
     assert set(inter.user) == {"17850", "12583"}
+
+
+def test_interactions_carry_the_unit_price_of_the_line():
+    inter = to_interactions(clean_transactions(raw_frame()))
+    prices = dict(zip(inter.item, inter.price))
+    assert prices["85123A"] == 2.55
+    assert prices["71053"] == 3.39
 
 
 def test_item_names_pick_the_most_common_description():
