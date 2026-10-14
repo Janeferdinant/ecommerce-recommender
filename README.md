@@ -17,9 +17,10 @@ Verified (run 2026-10-14), offline proxies on public data, 2,191 evaluation cust
 | Offline measure | Popularity baseline | Item-based CF | Implicit ALS | ALS vs popularity (95% CI) |
 |---|---|---|---|---|
 | Hit rate@10: customers with at least one correct recommendation (engagement proxy) | 28.8% | 35.6% | 39.5% | +37% (+28% to +48%) |
-| Coverage@10: share of the catalogue ever recommended (engagement proxy) | 1.8% | 17.7% | 30.7% | n/a |
 | Revenue@10: unit-price-weighted value of correct recommendations, GBP per customer (revenue proxy) | 1.49 | 1.46 | 1.70 | +15% (+3.5% to +27.5%) |
 | NDCG@10 (ranking quality) | 0.0434 | 0.0682 | 0.0726 | +67% (+52% to +83%) |
+
+Catalogue coverage and the other ranking metrics are in the detailed Results table below.
 
 Item-based CF is clearly better than popularity on hit rate (+24%, interval +16% to +32%) but its revenue proxy is not distinguishable from the baseline (-1.7%, interval -10.9% to +7.8%).
 
