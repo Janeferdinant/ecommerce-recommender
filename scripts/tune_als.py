@@ -11,7 +11,7 @@ import argparse
 import json
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,11 +28,11 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--k", type=int, default=10)
     parser.add_argument("--test-fraction", type=float, default=0.2)
-    parser.add_argument("--date", default=datetime.now(timezone.utc).strftime("%Y-%m-%d"))
+    parser.add_argument("--date", default=datetime.now(UTC).strftime("%Y-%m-%d"))
     parser.add_argument("--out-dir", default=str(ROOT / "docs" / "runs"))
     args = parser.parse_args()
 
-    started = datetime.now(timezone.utc)
+    started = datetime.now(UTC)
     inter, _ = load_clean(ROOT / "data" / "raw" / "online_retail_II.xlsx", ROOT / "data" / "cache")
     train, test = temporal_split(inter, args.test_fraction)
     fit, val = validation_split(train)

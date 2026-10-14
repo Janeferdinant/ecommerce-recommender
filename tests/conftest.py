@@ -18,7 +18,7 @@ def make_interactions(n_users=60, n_items=40, n_groups=4, seed=0):
         group = u % n_groups
         group_items = [i for i in range(n_items) if i % n_groups == group]
         other_items = [i for i in range(n_items) if i % n_groups != group]
-        for order in range(int(rng.integers(3, 8))):
+        for _ in range(int(rng.integers(3, 8))):
             ts = start + pd.Timedelta(days=int(rng.integers(0, 300)), minutes=int(rng.integers(0, 600)))
             basket = set(rng.choice(group_items, size=int(rng.integers(2, 5)), replace=False).tolist())
             if rng.random() < 0.3:

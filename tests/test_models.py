@@ -1,5 +1,4 @@
 ﻿import numpy as np
-import pytest
 
 from ecomrec.evaluate import evaluate
 from ecomrec.models import ALSModel, ItemKNNModel, PopularityModel

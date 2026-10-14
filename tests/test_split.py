@@ -1,4 +1,3 @@
-import pandas as pd
 import pytest
 
 from ecomrec.split import temporal_split
@@ -38,6 +37,9 @@ def test_split_does_not_depend_on_row_order(interactions):
     shuffled = interactions.sample(frac=1.0, random_state=3).reset_index(drop=True)
     a_train, a_test = temporal_split(interactions, test_fraction=0.2)
     b_train, b_test = temporal_split(shuffled, test_fraction=0.2)
-    key = lambda d: sorted(zip(d.user, d.item, d.ts))
+
+    def key(frame):
+        return sorted(zip(frame.user, frame.item, frame.ts))
+
     assert key(a_train) == key(b_train)
     assert key(a_test) == key(b_test)
