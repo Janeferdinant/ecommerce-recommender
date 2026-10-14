@@ -46,10 +46,11 @@ def to_interactions(clean: pd.DataFrame) -> pd.DataFrame:
             "item": clean["StockCode"],
             "ts": clean["InvoiceDate"],
             "invoice": clean["Invoice"],
+            "price": clean["Price"].astype(float),
         }
     )
     out = out.drop_duplicates(["user", "item", "invoice"])
-    return out[["user", "item", "ts"]].reset_index(drop=True)
+    return out[["user", "item", "ts", "price"]].reset_index(drop=True)
 
 
 def item_names(clean: pd.DataFrame) -> dict:
@@ -70,8 +71,9 @@ def load_clean(xlsx_path: Path, cache_dir: Path):
     inter_path, names_path = cache_dir / "interactions.csv", cache_dir / "item_names.csv"
     if inter_path.exists() and names_path.exists():
         inter = pd.read_csv(inter_path, dtype={"user": str, "item": str}, parse_dates=["ts"])
-        names = pd.read_csv(names_path, dtype=str).set_index("item")["name"].to_dict()
-        return inter, names
+        if "price" in inter.columns:  # caches written before the revenue proxy lack prices
+            names = pd.read_csv(names_path, dtype=str).set_index("item")["name"].to_dict()
+            return inter, names
     clean = clean_transactions(read_workbook(xlsx_path))
     inter, names = to_interactions(clean), item_names(clean)
     inter.to_csv(inter_path, index=False)
