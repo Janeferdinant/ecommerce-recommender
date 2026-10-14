@@ -22,5 +22,6 @@ The original code, tests and documentation in this repository are © Jane Rose F
 | SciPy | BSD-3-Clause | sparse matrices |
 | openpyxl | MIT | reading the dataset workbook |
 | pytest | MIT | tests |
+| ruff | MIT | linting (development only) |
 
 No third-party source code is copied into this repository. The algorithms follow published papers (see the README, "Credits & citation"); the implementations are original.

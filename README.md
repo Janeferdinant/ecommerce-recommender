@@ -1,51 +1,77 @@
-# E-Commerce Recommender: collaborative filtering and matrix factorisation on public retail data
+# E-Commerce Recommendation: recommendation approaches for an online store
 
 [![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-nd/4.0/)
 ![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)
+[![Live demo](https://img.shields.io/badge/demo-GitHub%20Pages-1f5f5b.svg)](https://janeferdinant.github.io/ecommerce-recommender/)
 
 ## Overview
 
-This repository compares three recommendation approaches for an online store: a popularity baseline, item-based collaborative filtering and implicit-feedback matrix factorisation (ALS). It is an **independent re-implementation on public data** (UCI Online Retail II), written to show the approaches end to end with tests, a temporal evaluation protocol and a small interactive demo. It is not the original deployed system, and it contains no client data or client code.
+Recommendation approaches for an online store, with reported gains in user engagement and sales revenue. The reported gains (15% higher user engagement and a 10% improvement in sales revenue, as stated on the CV) come from an earlier deployment. They are **Reported** results: they are not reproduced, confirmed or contradicted by this repository, which has no access to that system, its data or its code.
+
+This repository is an **independent re-implementation on public data** (UCI Online Retail II). It compares three recommendation approaches (popularity baseline, item-based collaborative filtering, implicit-feedback matrix factorisation) with tests, a temporal evaluation protocol and a small interactive demo. For each approach it reports *offline proxies* for engagement and revenue, computed on historical purchases. These proxies show the direction in which the approaches differ; they are not the deployed engagement and revenue gains.
+
+### Summary
+
+Verified (run 2026-10-14), offline proxies on public data, 2,191 evaluation customers, top 10 recommendations, ALS averaged over 5 seeds. Not the deployed engagement and revenue gains.
+
+| Offline measure | Popularity baseline | Item-based CF | Implicit ALS | ALS vs popularity (95% CI) |
+|---|---|---|---|---|
+| Hit rate@10: customers with at least one correct recommendation (engagement proxy) | 28.8% | 35.6% | 39.5% | +37% (+28% to +48%) |
+| Coverage@10: share of the catalogue ever recommended (engagement proxy) | 1.8% | 17.7% | 30.7% | n/a |
+| Revenue@10: unit-price-weighted value of correct recommendations, GBP per customer (revenue proxy) | 1.49 | 1.46 | 1.70 | +15% (+3.5% to +27.5%) |
+| NDCG@10 (ranking quality) | 0.0434 | 0.0682 | 0.0726 | +67% (+52% to +83%) |
+
+Item-based CF is clearly better than popularity on hit rate (+24%, interval +16% to +32%) but its revenue proxy is not distinguishable from the baseline (-1.7%, interval -10.9% to +7.8%).
+
+| Reported on the CV (earlier deployment) | Status |
+|---|---|
+| 15% higher user engagement | Reported (CV). Not reproduced here. |
+| 10% improvement in sales revenue | Reported (CV). Not reproduced here. |
 
 ## Demo
 
-A static page, `docs/index.html`, lets you pick a sample customer or search for a few products and compare the top-10 recommendations of all three models, each with a "because you bought..." explanation. It runs entirely in the browser from precomputed data and needs no server.
+[Open the live demo](https://janeferdinant.github.io/ecommerce-recommender/). Pick a sample customer or search for a few products and compare the top-10 recommendations of all three models, each with a "because you bought..." explanation. It runs entirely in the browser from precomputed data and needs no server. The page deliberately shows no metrics; see Results below.
 
 ![Demo: sample customer view](docs/img/demo-desktop-customer.png)
 
-Open `docs/index.html` in a browser, or serve it locally with `python -m http.server 8000 --directory docs` and visit http://localhost:8000. It is not deployed anywhere. The page deliberately shows no accuracy numbers; see Results below.
+To run it locally, open `docs/index.html` in a browser, or serve it with `python -m http.server 8000 --directory docs` and visit http://localhost:8000.
 
 ## Problem statement
 
-Given a customer's purchase history, rank the products they are most likely to buy next. In a wholesale-heavy gift shop with about 4,600 products and sparse histories, a recommender should do better than "show the best sellers to everyone", without needing product text or images.
+Given a customer's purchase history, rank the products they are most likely to buy next. In a wholesale-heavy gift shop with about 4,600 products and sparse histories, a recommender should do better than "show the best sellers to everyone", without needing product text or images. In a real store the payoff is more engagement (customers who find something they want) and more revenue; this repository measures offline stand-ins for both.
 
 ## Approach
 
 ```mermaid
 flowchart LR
     A[UCI Online Retail II] --> B[Clean: drop returns, fees, anonymous rows]
-    B --> C[(customer, product, basket time)]
+    B --> C[(customer, product, basket time, unit price)]
     C --> D[Temporal split: earliest 80% train, latest 20% test]
+    D --> T[Tune ALS on a validation window inside train]
     D --> E[Popularity]
     D --> F[Item-based CF]
-    D --> G[Implicit ALS]
+    T --> G[Implicit ALS]
     E --> H[Top-10 per customer, never already-bought items]
     F --> H
     G --> H
-    H --> I[Precision, Recall, NDCG at 10 on new products]
+    H --> I[Ranking metrics + engagement and revenue proxies, 5 seeds, bootstrap CIs]
 ```
 
 | Model | How it works |
 |---|---|
 | Popularity baseline | Ranks products by the number of distinct customers who bought them in the training period. The same list for everyone, minus what the customer already owns. |
 | Item-based CF | Cosine similarity between product purchase vectors (which customers bought which product). A customer's score for a product is the sum of its similarities to the products they bought. The explanation is the purchased product with the highest similarity to the recommendation. |
-| Implicit ALS | Matrix factorisation for implicit feedback (Hu, Koren and Volinsky, 2008), implemented in NumPy. Preference is 1 for every purchase; confidence is `1 + alpha * log1p(baskets containing the product)`. 32 factors, 15 alternating iterations, regularisation 0.1, alpha 10, fixed in advance and not tuned. The explanation is the purchased product whose factor vector is most cosine-similar to the recommendation. |
+| Implicit ALS | Matrix factorisation for implicit feedback (Hu, Koren and Volinsky, 2008), implemented in NumPy. Preference is 1 for every purchase; confidence is `1 + alpha * log1p(baskets containing the product)` with alpha 10. Factors (64), regularisation (1.0) and iterations (15) were selected on a validation window inside the training period; see `docs/runs/2026-10-14-als-tuning.md`. The explanation is the purchased product whose factor vector is most cosine-similar to the recommendation. |
 
 Choices that matter for the numbers:
 
-- **Temporal split, fixed seed.** Train is every purchase record strictly before 2011-09-12 12:27; test is everything from then on. Baskets are never split across the cut. The seed (42) controls only the ALS initialisation; everything else is deterministic.
+- **Temporal split.** Train is every purchase record strictly before 2011-09-12 12:27; test is everything from then on. Baskets are never split across the cut. Tuning never touches the test period: the training period is split again (earliest 80% fit, latest 20% validation).
+- **Seeds.** The seed controls only the ALS initialisation. Results are the mean and sample standard deviation over seeds 42 to 46; popularity and item-based CF are deterministic.
 - **Evaluation customers.** Customers seen in training who bought at least one product in the test period that they had not bought in training. Recommendations exclude everything bought in training, and the ground truth is the new products only. Customers who first appear in the test period (cold start) are not evaluated.
-- **Metrics.** Precision@10, Recall@10 and NDCG@10 with binary relevance, averaged over evaluation customers.
+- **Ranking metrics.** Precision@10, Recall@10 and NDCG@10 with binary relevance.
+- **Engagement proxies (offline).** Hit rate@10 is the share of evaluation customers with at least one correct recommendation. Coverage@10 is the share of the 4,452-product training catalogue that appears in anyone's top 10.
+- **Revenue proxy (offline).** Revenue@10 is, per evaluation customer, the sum of the unit prices of the recommended products they actually bought in the test period, averaged over customers (GBP, as recorded in the data). Each product's price is its median unit price in the training period. It is not quantity-weighted and is not actual sales revenue; it is shown as a relative uplift over popularity.
+- **Uncertainty.** Uplifts come with 95% paired bootstrap intervals over customers (1,000 resamples).
 
 ## Data
 
@@ -57,21 +83,42 @@ Choices that matter for the numbers:
 
 ## Results
 
-Independent re-implementation on public data. The 15% engagement and 10% revenue figures on the CV are reported results from an earlier deployment and are not reproduced here. The metrics below are offline ranking metrics on historical purchases; they are not business impact and say nothing about engagement or revenue.
+Independent re-implementation on public data. The 15% engagement and 10% revenue figures on the CV are reported results from an earlier deployment and are not reproduced here. Everything below is an offline measurement on historical purchases (offline proxies, not the deployed engagement and revenue gains) and says nothing about live engagement or sales.
+
+Mean ± sample sd over 5 seeds (42 to 46), k = 10, 2,191 evaluation customers.
 
 | Metric | Popularity baseline | Item-based CF | Implicit ALS | Status | How measured | Date |
 |---|---|---|---|---|---|---|
-| Precision@10 | 0.0407 | 0.0599 (+47%) | 0.0628 (+54%) | Verified (run 2026-10-14) | temporal split, 2,191 customers, seed 42, new products only | 2026-10-14 |
-| Recall@10 | 0.0167 | 0.0307 (+84%) | 0.0329 (+97%) | Verified (run 2026-10-14) | same | 2026-10-14 |
-| NDCG@10 | 0.0434 | 0.0682 (+57%) | 0.0713 (+64%) | Verified (run 2026-10-14) | same | 2026-10-14 |
+| Precision@10 | 0.0407 | 0.0599 | 0.0645 ± 0.0007 | Verified (run 2026-10-14) | temporal split, new products only | 2026-10-14 |
+| Recall@10 | 0.0167 | 0.0307 | 0.0340 ± 0.0006 | Verified (run 2026-10-14) | same | 2026-10-14 |
+| NDCG@10 | 0.0434 | 0.0682 | 0.0726 ± 0.0006 | Verified (run 2026-10-14) | same | 2026-10-14 |
+| Hit rate@10 (engagement proxy) | 0.2880 | 0.3560 | 0.3953 ± 0.0032 | Verified (run 2026-10-14), offline proxy | share of customers with at least one correct recommendation | 2026-10-14 |
+| Coverage@10 (engagement proxy) | 0.0180 | 0.1768 | 0.3066 ± 0.0020 | Verified (run 2026-10-14), offline proxy | distinct recommended products / 4,452 | 2026-10-14 |
+| Revenue@10, GBP per customer (revenue proxy) | 1.4875 | 1.4625 | 1.7042 ± 0.0275 | Verified (run 2026-10-14), offline proxy | unit-price-weighted correct recommendations, training-period median prices | 2026-10-14 |
 
-Percentages are relative to the popularity baseline. The run log, with the environment, data statistics and timings, is in [`docs/runs/2026-10-14-evaluation.md`](docs/runs/2026-10-14-evaluation.md) (machine-readable copy: `.json`). The test-first record is in [`docs/runs/2026-10-14-tests-red.md`](docs/runs/2026-10-14-tests-red.md) and [`docs/runs/2026-10-14-tests-green.md`](docs/runs/2026-10-14-tests-green.md).
+Popularity and item-based CF have no randomness, so their sd is zero.
 
-Absolute values are low because the task is hard (predicting new products among about 4,500, many customers buy repeat items) and the test period contains the pre-Christmas peak. This is a single split and a single seed with no confidence intervals, so the ALS and item-based CF results should be read as close to each other and clearly above the baseline, not as a ranking of the two.
+Relative uplift over the popularity baseline, with 95% paired bootstrap intervals over customers:
+
+| Metric | Item-based CF | Implicit ALS |
+|---|---|---|
+| Precision@10 | +47.4% (+36.5% to +59.7%) | +58.7% (+46.4% to +72.6%) |
+| Recall@10 | +83.7% (+60.1% to +110.7%) | +103.2% (+73.7% to +136.7%) |
+| NDCG@10 | +57.1% (+44.0% to +71.1%) | +67.1% (+52.0% to +83.1%) |
+| Hit rate@10 (engagement proxy) | +23.6% (+16.2% to +32.1%) | +37.2% (+28.2% to +47.9%) |
+| Revenue@10 (revenue proxy) | -1.7% (-10.9% to +7.8%) | +14.6% (+3.5% to +27.5%) |
+
+How to read this: both collaborative models clearly beat popularity on ranking quality and hit rate, and ALS is ahead of item-based CF on every measure in point estimates (the gap between those two was not separately tested). Item-based CF does not improve the revenue proxy over the baseline in this run. Coverage is much higher for both models because popularity recommends nearly the same ten products to everyone; high coverage is not by itself better engagement. The bootstrap intervals reflect which customers fall in the test period and the seed sd reflects ALS initialisation; neither captures variation across time windows, because a single temporal split is used.
+
+The run logs, with environment, data statistics and timings, are in `docs/runs/`:
+[`2026-10-14-evaluation-multiseed.md`](docs/runs/2026-10-14-evaluation-multiseed.md) (current results, with `.json`),
+[`2026-10-14-als-tuning.md`](docs/runs/2026-10-14-als-tuning.md) (validation-window tuning),
+[`2026-10-14-evaluation.md`](docs/runs/2026-10-14-evaluation.md) (earlier single-seed run with untuned ALS, kept for the record),
+and the test-first records (`tests-red*.md`, `tests-green.md`). Runtime on CPU: about 2.5 minutes to evaluate five seeds and about 3 minutes to tune ALS, well inside the 20-minute limit.
 
 ## Tech stack
 
-Python 3.11, NumPy, pandas, SciPy, openpyxl (dataset reader), pytest. Plain HTML, CSS and JavaScript for the demo. CPU only; the full pipeline runs in about two minutes.
+Python 3.11, NumPy, pandas, SciPy, openpyxl (dataset reader), pytest, ruff. Plain HTML, CSS and JavaScript for the demo. CPU only.
 
 ## Getting started
 
@@ -82,23 +129,27 @@ git clone https://github.com/Janeferdinant/ecommerce-recommender.git
 cd ecommerce-recommender
 python -m venv .venv
 source .venv/bin/activate            # Windows PowerShell: .venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-python -m pytest -q                  # expected: 29 passed
+pip install -r requirements.txt -r requirements-dev.txt
+python -m pytest -q                  # expected: 48 passed
+python -m ruff check .               # expected: All checks passed!
 python scripts/download_data.py      # expected last line: OK: data verified (UCI Online Retail II, CC BY 4.0)
-python scripts/run_evaluation.py --seed 42
+python scripts/run_evaluation.py     # five seeds; about 4 minutes the first time (1 to 2 minutes to read the workbook)
+python scripts/tune_als.py --seed 42 # optional: re-runs the ALS grid search, about 3 minutes
 python scripts/build_demo_data.py --seed 42   # regenerates docs/demo-data.json and docs/demo-data.js
 ```
 
-`run_evaluation.py` reads and cleans the workbook on the first run (about one minute, then cached under `data/cache/`), fits the three models (about 20 seconds) and writes `docs/runs/<today>-evaluation.md` and `.json`. The table printed at the end should match the Results section.
+`run_evaluation.py` prints the tables in the Results section (it writes `docs/runs/<today>-evaluation-multiseed.md` and `.json`; the numbers should match those above). With `make` installed, `make install`, `make test`, `make lint`, `make download`, `make evaluate`, `make tune` and `make demo-data` run the same commands, and `make all` runs everything except `tune`.
 
 ## Project structure
 
 ```
-src/ecomrec/        split.py, metrics.py, models.py, evaluate.py, data.py
-tests/              split leakage, metric toy cases, determinism, no already-bought items, cleaning
-scripts/            download_data.py, run_evaluation.py, build_demo_data.py
+src/ecomrec/        split.py, metrics.py, models.py, evaluate.py, tuning.py, stats.py, config.py, data.py
+tests/              split leakage, metrics and proxies on toy cases, determinism, no already-bought items,
+                    tuning window, bootstrap, cleaning
+scripts/            download_data.py, run_evaluation.py, tune_als.py, build_demo_data.py
 docs/index.html     interactive demo (plus demo-data.json / demo-data.js and screenshots)
-docs/runs/          dated run logs: tests (red, green), evaluation, demo check
+docs/runs/          dated run logs: tests (red, green), tuning, evaluation, demo check, lint
+Makefile            shortcuts for the commands above
 THIRD_PARTY_NOTICES.md   dataset and library licenses
 ```
 
@@ -108,16 +159,17 @@ The same pipeline shape applies to "customers also bought" shelves on product pa
 
 ## Limitations
 
-- **Offline metrics only.** Precision, Recall and NDCG on historical purchases do not measure engagement, conversion or revenue. There is no online A/B test, so no claim about business impact is made.
+- **Offline proxies only.** Hit rate, coverage and Revenue@10 are measured on historical purchases. They are not engagement or revenue in a live store, there is no online A/B test, and nothing here confirms or contradicts the 15% and 10% figures reported from the earlier deployment.
+- **Revenue proxy is crude.** It uses unit prices (not quantities or margins), prices fixed at training-period medians, and only products the customer bought anyway; it cannot capture extra sales caused by a recommendation.
 - **Cold start.** New customers and new products are not handled by the collaborative models. Customers absent from training are excluded from evaluation, and the models fall back to popularity for them.
-- **One split, one seed.** No confidence intervals; ALS hyperparameters were fixed in advance and not tuned.
-- **Seasonality.** The test window covers the autumn peak, so the baseline and the models are all evaluated in a busy period.
+- **One temporal split.** Seed variation and customer-sampling intervals are reported, but not variation across time windows. ALS tuning used a coarse grid, and the selected values sit at the edge of it for factors, regularisation and iterations.
+- **Seasonality.** The test window covers the autumn peak, so all models are evaluated in a busy period.
 - **Wholesale customers.** Many accounts are wholesalers with large, repetitive baskets, which differs from a typical consumer store.
 - **Demo approximation.** The "Pick products" mode uses the 800 most popular products and each product's 40 nearest neighbours; the sample-customer mode uses the full models.
 
 ## Future scope
 
-Time-decayed and repeat-purchase-aware scoring; tuning ALS on a validation window; ranking-loss models such as BPR; content features (product text) for cold start; coverage, diversity and novelty metrics; confidence intervals across several time windows; an online A/B test design with engagement and revenue as the outcomes.
+Time-decayed and repeat-purchase-aware scoring; evaluation over several rolling time windows; ranking-loss models such as BPR; content features (product text) for cold start; diversity and novelty metrics; a quantity- and margin-aware revenue estimate; an online A/B test design with engagement and revenue as the outcomes.
 
 ## Credits & citation
 
@@ -125,7 +177,7 @@ Time-decayed and repeat-purchase-aware scoring; tuning ALS on a validation windo
 - Hu, Y., Koren, Y., Volinsky, C. (2008). Collaborative filtering for implicit feedback datasets. *IEEE ICDM*.
 - Sarwar, B., Karypis, G., Konstan, J., Riedl, J. (2001). Item-based collaborative filtering recommendation algorithms. *WWW*.
 
-To cite this repository: Ferdinant, J. R. (2026). *E-Commerce Recommender: an independent re-implementation on public data* [Software]. https://github.com/Janeferdinant/ecommerce-recommender
+To cite this repository: Ferdinant, J. R. (2026). *E-Commerce Recommendation: an independent re-implementation on public data* [Software]. https://github.com/Janeferdinant/ecommerce-recommender
 
 ## License
 
