@@ -3,6 +3,10 @@
 Status: Verified (run 2026-10-14). Independent re-implementation on public data
 (UCI Online Retail II, CC BY 4.0). These are offline ranking metrics, not business impact.
 
+> Earlier run, kept for the record: one seed, ALS hyperparameters fixed in advance (not tuned), ranking metrics only.
+> The current results (tuned ALS, five seeds, engagement and revenue proxies, bootstrap intervals) are in
+> `2026-10-14-evaluation-multiseed.md`.
+
 - Started: 2026-10-14 04:00 UTC
 - Command: `python scripts/run_evaluation.py --seed 42 --date 2026-10-14`
 - Code version: 9ac97d3

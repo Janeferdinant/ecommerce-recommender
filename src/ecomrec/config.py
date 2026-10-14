@@ -5,4 +5,4 @@ validation window carved out of the training period (the test period is never
 used for tuning). See the dated tuning log in ``docs/runs/``.
 """
 
-ALS_PARAMS: dict[str, float | int] = {"factors": 32, "iterations": 15, "reg": 0.1, "alpha": 10.0}
+ALS_PARAMS: dict[str, float | int] = {"factors": 64, "iterations": 15, "reg": 1.0, "alpha": 10.0}

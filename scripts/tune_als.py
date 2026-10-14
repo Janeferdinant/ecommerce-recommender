@@ -44,7 +44,9 @@ def main() -> int:
 
     rows = "\n".join(
         f"| {r['factors']} | {r['reg']} | {r['iterations']} | {r[f'precision@{k}']:.4f} | "
-        f"{r[f'recall@{k}']:.4f} | {r[f'ndcg@{k}']:.4f} |" + (" **selected**" if all(r[n] == best[n] for n in best) else "")
+        f"{r[f'recall@{k}']:.4f} | {r[f'ndcg@{k}']:.4f} | "
+        + ("**selected**" if all(r[n] == best[n] for n in best) else "")
+        + " |"
         for r in table
     )
     log = f"""# ALS tuning run {args.date}
@@ -61,11 +63,14 @@ The test period was not used (and the first test timestamp, {test['ts'].min()}, 
 - Selection rule: highest validation NDCG@{k} (earliest grid point wins ties)
 - Wall time: {seconds:.0f} s on CPU
 
-| factors | reg | iterations | Precision@{k} | Recall@{k} | NDCG@{k} |
-|---|---|---|---|---|---|
+| factors | reg | iterations | Precision@{k} | Recall@{k} | NDCG@{k} | |
+|---|---|---|---|---|---|---|
 {rows}
 
 Selected: {best}
+
+The grid is coarse and validation differences between the better settings are small; treat the choice as a
+reasonable default, not a sharp optimum.
 """
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
