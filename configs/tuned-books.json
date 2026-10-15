@@ -1,0 +1,52 @@
+{
+  "dataset": "books",
+  "models": {
+    "popularity": {
+      "params": {},
+      "objective": "ndcg@10",
+      "val_ndcg@10": 0.03879700182626375
+    },
+    "itemknn": {
+      "params": {},
+      "objective": "ndcg@10",
+      "val_ndcg@10": 0.05311877634869045
+    },
+    "copurchase": {
+      "params": {
+        "beta": 0.5,
+        "min_support": 2
+      },
+      "objective": "ndcg@10",
+      "val_ndcg@10": 0.05721253529891732
+    },
+    "ease": {
+      "params": {
+        "reg": 300.0
+      },
+      "objective": "ndcg@10",
+      "val_ndcg@10": 0.06466865293534459
+    },
+    "bpr": {
+      "params": {
+        "factors": 64,
+        "lr": 0.05,
+        "reg": 0.01
+      },
+      "objective": "ndcg@10",
+      "val_ndcg@10": 0.06072394086015033
+    },
+    "als": {
+      "params": {
+        "factors": 64,
+        "reg": 0.1,
+        "iterations": 10,
+        "alpha": 10.0
+      },
+      "objective": "ndcg@10",
+      "val_ndcg@10": 0.060087102388487496
+    }
+  },
+  "seed": 42,
+  "protocol": "temporal split on file order (the ratings carry no timestamps): the earliest 80% of the subset's ratings train, the latest 20% test",
+  "updated": "2026-10-15"
+}

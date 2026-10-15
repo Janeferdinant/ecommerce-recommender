@@ -25,6 +25,7 @@ class _Base:
 
     # ---- fitting ---------------------------------------------------------
     def fit(self, train: pd.DataFrame) -> Self:
+        self._train = train
         self.users = sorted(train["user"].unique())
         self.items = sorted(train["item"].unique())
         self.user_index = {u: i for i, u in enumerate(self.users)}
@@ -85,6 +86,31 @@ class _Base:
         """The purchased item that best 'explains' the recommendation, or None."""
         return None
 
+    def _contributions(self, seen_idx: np.ndarray, target: int) -> np.ndarray | None:
+        """Non-negative contribution of each seen item to the score of ``target`` (None: no explanation)."""
+        return None
+
+    def explain_top(self, user: Any, item: Any, n: int = 3) -> list[tuple[Any, float]]:
+        """Up to ``n`` purchased items that contributed most, with shares that sum to one."""
+        return self._explain_idx(self._seen_idx(user), self.item_index[item], n)
+
+    def explain_top_items(self, items: Any, item: Any, n: int = 3) -> list[tuple[Any, float]]:
+        """Same as ``explain_top`` for an ad-hoc basket of item ids."""
+        idx = np.array(sorted(self.item_index[i] for i in items), dtype=np.int64)
+        return self._explain_idx(idx, self.item_index[item], n)
+
+    def _explain_idx(self, seen_idx: np.ndarray, target: int, n: int) -> list[tuple[Any, float]]:
+        if len(seen_idx) == 0:
+            return []
+        contrib = self._contributions(seen_idx, target)
+        if contrib is None:
+            return []
+        contrib = np.clip(np.asarray(contrib, dtype=np.float64), 0.0, None)
+        ranked = np.lexsort((np.arange(len(contrib)), -contrib))[:n]
+        picked = [int(o) for o in ranked if contrib[o] > 0]
+        total = float(contrib[picked].sum()) if picked else 0.0
+        return [(self.items[seen_idx[o]], float(contrib[o] / total)) for o in picked]
+
     def _best_source(self, seen_idx: np.ndarray, target: int, sim_row: np.ndarray) -> Any | None:
         if len(seen_idx) == 0:
             return None
@@ -122,6 +148,9 @@ class ItemKNNModel(_Base):
     def explain(self, user: Any, item: Any) -> Any | None:
         j = self.item_index[item]
         return self._best_source(self._seen_idx(user), j, self.similarity[:, j])
+
+    def _contributions(self, seen_idx: np.ndarray, target: int) -> np.ndarray | None:
+        return self.similarity[seen_idx, target]
 
 
 class ALSModel(_Base):
@@ -193,3 +222,6 @@ class ALSModel(_Base):
     def explain(self, user: Any, item: Any) -> Any | None:
         j = self.item_index[item]
         return self._best_source(self._seen_idx(user), j, self._unit @ self._unit[j])
+
+    def _contributions(self, seen_idx: np.ndarray, target: int) -> np.ndarray | None:
+        return self._unit[seen_idx] @ self._unit[target]

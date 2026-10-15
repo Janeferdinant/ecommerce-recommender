@@ -1,0 +1,142 @@
+{
+  "date": "2026-10-14",
+  "dataset": "retail",
+  "label": "SIMULATION, not a deployed result",
+  "control": "popularity",
+  "treatment": "ease",
+  "treatment_params": {
+    "reg": 1000.0
+  },
+  "k": 10,
+  "n_customers": 2191,
+  "replay_conversion": {
+    "control": 0.2879963486992241,
+    "treatment": 0.4614331355545413,
+    "relative_uplift": 0.6022187004754358
+  },
+  "scenarios": [
+    {
+      "share_of_replay_effect": 1.0,
+      "relative_uplift": 0.6022187004754358,
+      "n_per_arm": 122,
+      "simulated_power_at_n": 0.8105
+    },
+    {
+      "share_of_replay_effect": 0.5,
+      "relative_uplift": 0.3153724247226626,
+      "n_per_arm": 422,
+      "simulated_power_at_n": 0.816
+    },
+    {
+      "share_of_replay_effect": 0.25,
+      "relative_uplift": 0.13470681458003186,
+      "n_per_arm": 2220,
+      "simulated_power_at_n": 0.795
+    }
+  ],
+  "sample_size_table": {
+    "0.02": {
+      "0.02": 1941808,
+      "0.05": 315206,
+      "0.1": 80682,
+      "0.2": 21109
+    },
+    "0.05": {
+      "0.02": 752703,
+      "0.05": 122124,
+      "0.1": 31234,
+      "0.2": 8158
+    },
+    "0.1": {
+      "0.02": 356335,
+      "0.05": 57763,
+      "0.1": 14751,
+      "0.2": 3841
+    },
+    "0.288": {
+      "0.02": 97594,
+      "0.05": 15750,
+      "0.1": 3992,
+      "0.2": 1023
+    }
+  },
+  "power_curve": [
+    {
+      "n_per_arm": 100,
+      "power_replay_effect": 0.73,
+      "power_half_effect": 0.2775
+    },
+    {
+      "n_per_arm": 200,
+      "power_replay_effect": 0.9545,
+      "power_half_effect": 0.4965
+    },
+    {
+      "n_per_arm": 400,
+      "power_replay_effect": 0.999,
+      "power_half_effect": 0.7845
+    },
+    {
+      "n_per_arm": 800,
+      "power_replay_effect": 1.0,
+      "power_half_effect": 0.9685
+    },
+    {
+      "n_per_arm": 1600,
+      "power_replay_effect": 1.0,
+      "power_half_effect": 1.0
+    },
+    {
+      "n_per_arm": 3200,
+      "power_replay_effect": 1.0,
+      "power_half_effect": 1.0
+    }
+  ],
+  "minimum_detectable_uplift_at_p0": {
+    "500": 0.2888635392803013,
+    "1000": 0.20233180288753239,
+    "2000": 0.1420341047655701,
+    "5000": 0.0892181485629776,
+    "10000": 0.06286117685931847
+  },
+  "aa_false_positive_rate": {
+    "200": 0.0455,
+    "1000": 0.054
+  },
+  "revenue": {
+    "control_mean": 1.4874806024646279,
+    "treatment_mean": 2.0693108169785486,
+    "sigma": 3.487979879825616,
+    "delta": 0.5818302145139207,
+    "n_per_arm": 565,
+    "simulated_power_at_n": 0.804,
+    "power_curve": [
+      {
+        "n_per_arm": 100,
+        "power": 0.23
+      },
+      {
+        "n_per_arm": 200,
+        "power": 0.4095
+      },
+      {
+        "n_per_arm": 400,
+        "power": 0.67
+      },
+      {
+        "n_per_arm": 800,
+        "power": 0.907
+      },
+      {
+        "n_per_arm": 1600,
+        "power": 0.9975
+      },
+      {
+        "n_per_arm": 3200,
+        "power": 1.0
+      }
+    ]
+  },
+  "n_sims": 2000,
+  "seed": 42
+}
