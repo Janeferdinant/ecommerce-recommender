@@ -5,8 +5,10 @@ purchases. They are offline stand-ins, not measurements of deployed engagement
 or sales revenue.
 """
 import math
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from typing import Any
+
+import numpy as np
 
 
 def _hits(recommended: Sequence[Any], relevant: set[Any], k: int) -> int:
@@ -68,3 +70,72 @@ def relative_uplift(value: float, baseline: float) -> float:
     if baseline == 0:
         return math.nan
     return value / baseline - 1.0
+
+
+# ---- beyond accuracy ---------------------------------------------------------
+def novelty_at_k(recommended: Sequence[Any], buyers: Mapping[Any, int], n_users: int, k: int) -> float:
+    """Mean self-information (bits) of the top-k items: ``-log2(share of customers who bought the item)``.
+
+    Higher means the list leans towards less popular items. Empty lists score 0.
+    """
+    items = [i for i in list(recommended)[:k] if buyers.get(i, 0) > 0]
+    if not items:
+        return 0.0
+    return sum(-math.log2(buyers[i] / n_users) for i in items) / len(items)
+
+
+def jaccard_distance(a: frozenset[Any], b: frozenset[Any]) -> float:
+    """``1 - |a & b| / |a | b|`` (0 when both sets are empty)."""
+    union = a | b
+    return 1.0 - len(a & b) / len(union) if union else 0.0
+
+
+def intra_list_diversity(recommended: Sequence[Any], similarity: Callable[[Any, Any], float], k: int) -> float:
+    """``1 - mean pairwise similarity`` over the top-k items (0 for fewer than two items)."""
+    items = list(recommended)[:k]
+    if len(items) < 2:
+        return 0.0
+    pairs = [(items[a], items[b]) for a in range(len(items)) for b in range(a + 1, len(items))]
+    return 1.0 - sum(similarity(x, y) for x, y in pairs) / len(pairs)
+
+
+def assign_popularity_bins(buyers: Mapping[Any, int], n_bins: int = 10) -> dict[Any, int]:
+    """Equal-sized bins of the catalogue by popularity; bin 0 holds the best sellers (ties: item order)."""
+    ranked = sorted(buyers, key=lambda item: (-buyers[item], str(item)))
+    n = len(ranked)
+    return {item: min(rank * n_bins // n, n_bins - 1) for rank, item in enumerate(ranked)}
+
+
+def popularity_bin_shares(recommendation_lists: Iterable[Sequence[Any]], bins: Mapping[Any, int], n_bins: int,
+                          k: int) -> np.ndarray:
+    """Share of all recommended slots that fall into each popularity bin."""
+    counts = np.zeros(n_bins)
+    for recs in recommendation_lists:
+        for item in list(recs)[:k]:
+            if item in bins:
+                counts[bins[item]] += 1
+    total = counts.sum()
+    return counts / total if total else counts
+
+
+def popularity_bin_recall(recommendation_lists: Sequence[Sequence[Any]], truths: Sequence[set[Any]],
+                          bins: Mapping[Any, int], n_bins: int, k: int) -> np.ndarray:
+    """Per bin: share of relevant (customer, item) pairs that were recommended. NaN for empty bins.
+
+    Relevant items that are not in the training catalogue cannot be recommended by any model and are ignored.
+    """
+    hits, totals = np.zeros(n_bins), np.zeros(n_bins)
+    for recs, truth in zip(recommendation_lists, truths, strict=True):
+        top = set(list(recs)[:k])
+        for item in truth:
+            if item in bins:
+                totals[bins[item]] += 1
+                hits[bins[item]] += item in top
+    with np.errstate(invalid="ignore", divide="ignore"):
+        return np.where(totals > 0, hits / totals, np.nan)
+
+
+def oracle_revenue_at_k(relevant: Iterable[Any], prices: Mapping[Any, float], k: int) -> float:
+    """Best possible ``revenue_at_k``: the k most valuable relevant items (unknown price counts as zero)."""
+    values = sorted((prices.get(item, 0.0) for item in set(relevant)), reverse=True)
+    return float(sum(values[:k]))

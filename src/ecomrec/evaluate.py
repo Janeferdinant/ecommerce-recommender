@@ -28,7 +28,7 @@ Split = tuple[pd.DataFrame, pd.DataFrame]
 
 def build_models(seed: int = 0, als_params: dict[str, Any] | None = None) -> list[Any]:
     """Popularity, item-based CF and ALS (tuned defaults from ``ecomrec.config``)."""
-    params = dict(ALS_PARAMS)
+    params: dict[str, Any] = dict(ALS_PARAMS)
     params.update(als_params or {})
     return [PopularityModel(), ItemKNNModel(), ALSModel(seed=seed, **params)]
 

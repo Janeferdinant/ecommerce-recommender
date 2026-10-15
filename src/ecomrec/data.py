@@ -62,7 +62,7 @@ def item_names(clean: pd.DataFrame) -> dict:
         .sort_values(["StockCode", "n", "Description"], ascending=[True, False, True])
         .drop_duplicates("StockCode")
     )
-    return {row.StockCode: row.Description.title() for row in top.itertuples()}
+    return {row.StockCode: str(row.Description).title() for row in top.itertuples()}
 
 
 def load_clean(xlsx_path: Path, cache_dir: Path):
@@ -79,3 +79,4 @@ def load_clean(xlsx_path: Path, cache_dir: Path):
     inter.to_csv(inter_path, index=False)
     pd.Series(names, name="name").rename_axis("item").reset_index().to_csv(names_path, index=False)
     return inter, names
+

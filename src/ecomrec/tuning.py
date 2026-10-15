@@ -2,14 +2,16 @@
 from __future__ import annotations
 
 import itertools
+from collections.abc import Callable
 from typing import Any
 
 import pandas as pd
 
 from .config import ALS_PARAMS
 from .evaluate import evaluate
+from .evaluation import evaluate_extended
 from .models import ALSModel
-from .split import temporal_split
+from .split import temporal_split, validation_split_by_protocol
 
 DEFAULT_GRID: dict[str, list[float | int]] = {
     "factors": [16, 32, 64],
@@ -42,4 +44,32 @@ def tune_als(train: pd.DataFrame, grid: dict[str, list[Any]] | None = None, seed
         table.append({**params, f"ndcg@{k}": metrics[f"ndcg@{k}"], f"precision@{k}": metrics[f"precision@{k}"],
                       f"recall@{k}": metrics[f"recall@{k}"], "n_val_users": result["n_eval_users"]})
     best_row = max(table, key=lambda row: row[f"ndcg@{k}"])  # max keeps the first of equal scores
+    return {n: best_row[n] for n in names}, table
+
+
+def tune_model(builder: Callable[..., Any], grid: dict[str, list[Any]], train: pd.DataFrame, protocol: str = "temporal",
+               objective: str = "ndcg@10", k: int = 10, val_fraction: float = 0.2,
+               seed: int = 0) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Grid search for any model on a validation window carved out of the *training* data only.
+
+    ``builder(**params)`` returns an unfitted model. The window follows the dataset's protocol (a later slice of time,
+    or each customer's last training interaction). The best row maximises ``objective`` (``ndcg@k`` or
+    ``revenue@k``); ties go to the earlier grid point. Returns ``(best_params, table)``.
+    """
+    fit, val = validation_split_by_protocol(train, protocol, val_fraction)
+    names = list(grid)
+    table: list[dict[str, Any]] = []
+    for values in itertools.product(*(grid[n] for n in names)):
+        params = dict(zip(names, values, strict=True))
+        result = evaluate_extended((fit, val), [builder(**params)], k=k, seed=seed, beyond=False)
+        metrics = next(iter(result.summary.values()))
+        row: dict[str, Any] = dict(params)
+        for key in (f"ndcg@{k}", f"hit_rate@{k}", f"precision@{k}", f"recall@{k}", f"revenue@{k}"):
+            if key in metrics:
+                row[key] = metrics[key]
+        row["n_val_users"] = len(result.users)
+        table.append(row)
+    if any(objective not in row for row in table):
+        raise ValueError(f"objective {objective!r} is not available for this data")
+    best_row = max(table, key=lambda row: row[objective])  # max keeps the first of equal scores
     return {n: best_row[n] for n in names}, table
