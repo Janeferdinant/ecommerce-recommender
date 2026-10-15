@@ -1,0 +1,69 @@
+{
+  "dataset": "retail",
+  "models": {
+    "popularity": {
+      "params": {},
+      "objective": "ndcg@10",
+      "val_ndcg@10": 0.05236794803647301
+    },
+    "itemknn": {
+      "params": {},
+      "objective": "ndcg@10",
+      "val_ndcg@10": 0.08883712655881244
+    },
+    "itemknn_recency": {
+      "params": {
+        "half_life_days": 30
+      },
+      "objective": "ndcg@10",
+      "val_ndcg@10": 0.10058612931735343
+    },
+    "copurchase": {
+      "params": {
+        "beta": 0.5,
+        "min_support": 5
+      },
+      "objective": "ndcg@10",
+      "val_ndcg@10": 0.08119610421062298
+    },
+    "copurchase_price": {
+      "params": {
+        "beta": 0.5,
+        "min_support": 5,
+        "gamma": 1.5
+      },
+      "objective": "revenue@10",
+      "val_revenue@10": 3.6796491228070174,
+      "val_ndcg@10": 0.033207246491222364
+    },
+    "als": {
+      "params": {
+        "factors": 64,
+        "reg": 1.0,
+        "iterations": 15,
+        "alpha": 10.0
+      },
+      "objective": "ndcg@10",
+      "val_ndcg@10": 0.0755703135589814
+    },
+    "ease": {
+      "params": {
+        "reg": 1000.0
+      },
+      "objective": "ndcg@10",
+      "val_ndcg@10": 0.10300491786813007
+    },
+    "bpr": {
+      "params": {
+        "factors": 64,
+        "lr": 0.02,
+        "reg": 0.01
+      },
+      "objective": "ndcg@10",
+      "val_ndcg@10": 0.06954345884726476
+    }
+  },
+  "seed": 42,
+  "protocol": "temporal split: the earliest 80% of purchase records train, the latest 20% test",
+  "updated": "2026-10-14"
+}
