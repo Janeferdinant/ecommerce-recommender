@@ -89,6 +89,12 @@ def main() -> int:
 
     tuned["updated"] = args.date
     cfg_path.parent.mkdir(parents=True, exist_ok=True)
+    if cfg_path.exists():  # merge with what other runs wrote meanwhile (partial runs may overlap in time)
+        latest = read_tuned(cfg_path)
+        for name in ("popularity", "itemknn", *tables):
+            latest["models"][name] = tuned["models"][name]
+        latest.update({k: v for k, v in tuned.items() if k != "models"})
+        tuned = latest
     write_tuned(cfg_path, tuned)
 
     def fmt(v: object) -> str:
