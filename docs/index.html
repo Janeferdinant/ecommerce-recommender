@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Product Recommender Demo</title>
-<meta name="description" content="Pick a sample customer or a few products and compare top-10 recommendations from a popularity baseline, item-based collaborative filtering and matrix factorisation.">
+<title>Recommender Demo</title>
+<meta name="description" content="Pick a sample customer or a few items and compare top-10 recommendations from up to eight recommenders on two public datasets, with a panel that explains why each item was suggested.">
 <link rel="icon" href="data:,">
 <style>
 :root {
   --bg: #f6f5f1; --panel: #ffffff; --ink: #1d2327; --muted: #5d676e; --line: #dcdad2;
-  --accent: #1f5f5b; --accent-ink: #ffffff; --chip: #e6efed; --focus: #b4530a;
+  --accent: #1f5f5b; --accent-ink: #ffffff; --chip: #e6efed; --focus: #b4530a; --bar: #7fb8b2;
 }
 @media (prefers-color-scheme: dark) {
   :root { --bg: #14181a; --panel: #1c2225; --ink: #e8ecee; --muted: #a2adb3; --line: #323b40;
-    --accent: #6cc3bb; --accent-ink: #0d1a19; --chip: #25363a; --focus: #f0a05a; }
+    --accent: #6cc3bb; --accent-ink: #0d1a19; --chip: #25363a; --focus: #f0a05a; --bar: #3f857e; }
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--ink);
@@ -21,10 +21,10 @@ body { margin: 0; background: var(--bg); color: var(--ink);
 .wrap { max-width: 1180px; margin: 0 auto; padding: 24px 16px 40px; }
 h1 { font-size: clamp(1.5rem, 4vw, 2.1rem); line-height: 1.2; margin: 0 0 8px; letter-spacing: -0.01em; }
 .lede { color: var(--muted); margin: 0 0 20px; max-width: 70ch; }
-.tabs { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel); }
+.tabs { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel); margin-right: 8px; margin-bottom: 8px; }
 .tabs button { border: 0; background: transparent; color: var(--ink); padding: 10px 18px; font: inherit; cursor: pointer; min-height: 44px; }
 .tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
-button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin: 16px 0; }
 .panel h2 { font-size: 1rem; margin: 0 0 10px; }
 label { display: block; font-weight: 600; margin-bottom: 6px; }
@@ -42,16 +42,27 @@ select, input[type="search"] { width: 100%; max-width: 420px; min-height: 44px; 
 .hits button:hover { background: var(--chip); }
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
 .btn { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 8px; padding: 8px 14px; font: inherit; cursor: pointer; min-height: 44px; }
+details.models summary { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; }
+.model-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 4px 16px; margin: 4px 0 0; padding: 0; list-style: none; }
+.model-list label { display: flex; gap: 8px; align-items: center; font-weight: 400; min-height: 36px; margin: 0; }
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 16px; }
-.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; min-width: 0; }
 .card h3 { margin: 0; font-size: 1.05rem; }
 .card .sub { color: var(--muted); font-size: 0.875rem; margin: 2px 0 12px; }
-.recs { list-style: none; margin: 0; padding: 0; counter-reset: rank; }
-.recs li { counter-increment: rank; display: grid; grid-template-columns: 1.6rem 1fr; gap: 0 8px; padding: 9px 0; border-top: 1px solid var(--line); }
-.recs li::before { content: counter(rank); color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
-.recs .nm { font-weight: 600; overflow-wrap: anywhere; }
-.recs .why { color: var(--muted); font-size: 0.85rem; grid-column: 2; overflow-wrap: anywhere; }
-.recs .why b { color: var(--accent); font-weight: 600; }
+.recs { list-style: none; margin: 0; padding: 0; }
+.recs > li { border-top: 1px solid var(--line); }
+.rec-btn { display: grid; grid-template-columns: 1.6rem 1fr auto; gap: 0 8px; width: 100%; text-align: left; border: 0; background: transparent; color: var(--ink);
+  font: inherit; padding: 9px 0; min-height: 44px; cursor: pointer; align-items: start; }
+.rec-btn .rank { color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+.rec-btn .nm { font-weight: 600; overflow-wrap: anywhere; }
+.rec-btn .code { display: block; color: var(--muted); font-size: 0.85rem; font-weight: 400; }
+.rec-btn .why-tag { color: var(--accent); font-size: 0.85rem; white-space: nowrap; padding-top: 2px; }
+.explain { margin: 0 0 10px 1.6rem; padding: 10px 12px; background: var(--chip); border-radius: 8px; font-size: 0.9rem; }
+.explain p { margin: 0 0 6px; }
+.explain .src { display: grid; grid-template-columns: minmax(0, 1fr) 3.2rem; gap: 2px 8px; align-items: center; margin: 4px 0; }
+.explain .src span { overflow-wrap: anywhere; }
+.explain .track { grid-column: 1 / -1; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.explain .fill { display: block; height: 100%; background: var(--bar); }
 .empty { color: var(--muted); padding: 24px 0; }
 footer { margin-top: 28px; color: var(--muted); font-size: 0.85rem; max-width: 80ch; }
 [hidden] { display: none !important; }
@@ -59,13 +70,18 @@ footer { margin-top: 28px; color: var(--muted); font-size: 0.85rem; max-width: 8
 </head>
 <body>
 <div class="wrap">
-  <h1>Product recommender demo</h1>
-  <p class="lede">Compare what three recommenders suggest for the same shopper. Choose a sample customer, or pick a few products and see what each model would suggest next.</p>
+  <h1>Recommender demo</h1>
+  <p class="lede">Compare what the recommenders suggest for the same shopper or the same picks, on two public datasets. Select any suggestion to see why it was recommended.</p>
 
-  <div class="tabs" role="tablist" aria-label="Demo mode">
-    <button role="tab" id="tab-customer" aria-selected="true" aria-controls="mode-customer">Sample customer</button>
-    <button role="tab" id="tab-picker" aria-selected="false" aria-controls="mode-picker">Pick products</button>
+  <div class="tabs" role="tablist" aria-label="Dataset">
+    <button role="tab" id="ds-retail" aria-selected="true">Online shop</button>
+    <button role="tab" id="ds-books" aria-selected="false">Books</button>
   </div>
+  <div class="tabs" role="tablist" aria-label="Demo mode" id="mode-tabs">
+    <button role="tab" id="tab-customer" aria-selected="true" aria-controls="mode-customer">Sample customer</button>
+    <button role="tab" id="tab-picker" aria-selected="false" aria-controls="mode-picker">Pick items</button>
+  </div>
+  <p class="muted" id="status" role="status"></p>
 
   <section class="panel" id="mode-customer" role="tabpanel" aria-labelledby="tab-customer">
     <label for="customer">Sample customer</label>
@@ -76,41 +92,58 @@ footer { margin-top: 28px; color: var(--muted); font-size: 0.85rem; max-width: 8
   </section>
 
   <section class="panel" id="mode-picker" role="tabpanel" aria-labelledby="tab-picker" hidden>
-    <label for="search">Search products</label>
-    <input type="search" id="search" placeholder="e.g. lantern, cake, heart" autocomplete="off">
+    <label for="search" id="search-label">Search products</label>
+    <input type="search" id="search" autocomplete="off">
     <ul class="hits" id="hits"></ul>
-    <h2 style="margin-top:14px">Your basket <span class="muted" id="basket-count"></span></h2>
+    <h2 style="margin-top:14px" id="basket-title">Your basket <span class="muted" id="basket-count"></span></h2>
     <ul class="chips" id="basket"></ul>
-    <div class="row">
-      <button class="btn" id="example" type="button">Try an example basket</button>
-      <button class="btn" id="clear" type="button">Clear basket</button>
-    </div>
+    <div class="row" id="presets"></div>
   </section>
+
+  <details class="panel models" id="model-panel">
+    <summary>Choose which recommenders to show</summary>
+    <ul class="model-list" id="model-list"></ul>
+  </details>
 
   <div id="results" class="grid" aria-live="polite"></div>
 
-  <footer>
-    <p>Independent re-implementation on public data: UCI Online Retail II (CC BY 4.0). Models were trained on the earlier part of the sales history. Sample customers are anonymous labels; no customer identifiers are shown. In "Pick products" mode the page recomputes suggestions in your browser from the 800 most popular products, using each product's 40 nearest neighbours for item-based filtering. Suggestions are illustrative.</p>
-  </footer>
+  <footer id="footer"></footer>
 </div>
 
 <script src="demo-data.js"></script>
 <script>
 (function () {
   "use strict";
-  var D = window.DEMO_DATA;
   var MAX_BASKET = 8, TOP_K = 10;
   var $ = function (id) { return document.getElementById(id); };
-  var nameOf = function (i) { return D.items[i][1]; };
-  var codeOf = function (i) { return D.items[i][0]; };
 
   var MODELS = [
-    { key: "popularity", title: "Popularity baseline", sub: "Best sellers overall; the same list for everyone." },
-    { key: "itemknn", title: "Item-based collaborative filtering", sub: "Products frequently bought by the same customers (cosine similarity)." },
-    { key: "als", title: "Matrix factorisation (ALS)", sub: "Learned taste factors from implicit purchase data." }
+    { key: "popularity", title: "Popularity baseline", sub: "The best sellers overall; the same list for everyone." },
+    { key: "itemknn", title: "Item-based collaborative filtering", sub: "Items that the same people picked (cosine similarity)." },
+    { key: "itemknn_recency", title: "Item-based CF, recency-weighted", sub: "The same idea, but recent activity counts more than old activity." },
+    { key: "copurchase", title: "Co-purchase", sub: "Items that appeared together in the same basket, with a minimum support rule." },
+    { key: "copurchase_price", title: "Co-purchase with price-aware re-ranking", sub: "Co-purchase scores multiplied by a price factor, a business rule." },
+    { key: "als", title: "Matrix factorisation (ALS)", sub: "Learned taste factors from implicit data, solved by alternating least squares." },
+    { key: "ease", title: "EASE", sub: "A linear item-to-item model learned in closed form." },
+    { key: "bpr", title: "Matrix factorisation (BPR)", sub: "Taste factors learned to rank items a person picked above ones they did not." }
   ];
+  var DATASETS = {
+    retail: { tab: "ds-retail", get: function () { return window.DEMO_DATA; }, file: null,
+      verb: "bought", noun: "products", search: "Search products", placeholder: "e.g. lantern, cake, heart",
+      basket: "Your basket", source: "Because you bought",
+      footer: "Online shop: UCI Online Retail II (CC BY 4.0), a UK gift retailer's 2009 to 2011 sales. Models were trained on the earlier part of the sales history. Sample customers are anonymous labels; no customer identifiers are shown." },
+    books: { tab: "ds-books", get: function () { return window.DEMO_DATA_BOOKS; }, file: "demo-data-books.js",
+      verb: "rated", noun: "books", search: "Search books", placeholder: "e.g. hunger games, pride, ring",
+      basket: "Your picks", source: "Because you rated",
+      footer: "Books: Goodbooks-10k by Zygmunt Zając (CC BY-SA 4.0, https://github.com/zygmuntz/goodbooks-10k), ratings of ten thousand popular books collected from Goodreads. This page embeds an excerpt of it (600 book titles and numbers derived by the models), which is licensed CC BY-SA 4.0 separately from the rest of this repository; changes were made (selection and derived scores). The models were trained on a seeded sample of 8,000 users; every rating counts as an interaction." }
+  };
+  var state = { ds: "retail", D: null, mode: "customer", basket: [], enabled: {} };
+  MODELS.forEach(function (m) { state.enabled[m.key] = true; });
 
-  // ---- recommendation maths for the product picker (mirrors scripts/build_demo_data.py) ----
+  var nameOf = function (i) { return state.D.items[i][1]; };
+  var codeOf = function (i) { return state.D.items[i][0]; };
+
+  // ---- recommendation maths for the picker (mirrors src/ecomrec/demo_ref.py) ----
   function solve(A, b) {
     var n = b.length, M = A.map(function (r, i) { return r.slice().concat([b[i]]); });
     for (var c = 0; c < n; c++) {
@@ -135,30 +168,58 @@ footer { margin-top: 28px; color: var(--muted); font-size: 0.85rem; max-width: 8
     idx.sort(function (a, b) { return scores[b] - scores[a] || a - b; });
     return idx;
   }
-  function recommendFromItems(chosen) {
-    var cat = D.catalogue, n = cat.length;
-    var sel = chosen.slice().sort(function (a, b) { return a - b; });
+  function shares(sources, values) {
+    var pairs = [];
+    sources.forEach(function (s, i) { if (values[i] > 0) pairs.push([s, values[i]]); });
+    pairs.sort(function (a, b) { return b[1] - a[1] || a[0] - b[0]; });
+    pairs = pairs.slice(0, 3);
+    var total = pairs.reduce(function (a, p) { return a + p[1]; }, 0);
+    return total > 0 ? pairs.map(function (p) { return [p[0], Math.round(p[1] / total * 100) / 100]; }) : [];
+  }
+  function neighbourRecs(lists, sel, n, weights) {
     var isChosen = {}; sel.forEach(function (c) { isChosen[c] = true; });
-    var out = {};
-
-    var pop = [];
-    for (var p = 0; p < n && pop.length < TOP_K; p++) if (!isChosen[p]) pop.push({ i: cat[p], w: null });
-    out.popularity = pop;
-
-    var scores = new Array(n).fill(0), why = {};
+    var scores = new Array(n).fill(0), contrib = {};
     sel.forEach(function (c) {
-      D.knn[c].forEach(function (e) {
+      lists[c].forEach(function (e) {
         var j = e[0], s = e[1];
         if (isChosen[j]) return;
         scores[j] += s;
-        if (!why[j] || s > why[j][1]) why[j] = [c, s];
+        if (!contrib[j]) contrib[j] = [];
+        contrib[j].push([c, s]);
       });
     });
-    var order = byScoreDesc(scores).filter(function (j) { return scores[j] > 0; }).slice(0, TOP_K);
-    var knn = order.map(function (j) { return { i: cat[j], w: cat[why[j][0]] }; });
+    var fin = weights ? scores.map(function (s, j) { return s * weights[j]; }) : scores;
+    var order = byScoreDesc(fin).filter(function (j) { return fin[j] > 0; }).slice(0, TOP_K);
+    var recs = order.map(function (j) {
+      var rec = { i: j, w: shares(contrib[j].map(function (x) { return x[0]; }), contrib[j].map(function (x) { return x[1]; })) };
+      if (weights) rec.f = weights[j];
+      return rec;
+    });
     var used = {}; order.forEach(function (j) { used[j] = true; });
-    for (var q = 0; q < n && knn.length < TOP_K; q++) if (!isChosen[q] && !used[q]) knn.push({ i: cat[q], w: null });
-    out.itemknn = knn;
+    for (var q = 0; q < n && recs.length < TOP_K; q++) if (!isChosen[q] && !used[q]) {
+      var rec2 = { i: q, w: [] };
+      if (weights) rec2.f = weights[q];
+      recs.push(rec2);
+    }
+    return recs;
+  }
+  function unitCosShares(F, sel, j) {
+    var norm = function (v) { return Math.sqrt(v.reduce(function (a, x) { return a + x * x; }, 0)) || 1e-12; };
+    var cos = function (a, b) { var s = 0; for (var i = 0; i < F[a].length; i++) s += F[a][i] * F[b][i]; return s / (Math.max(norm(F[a]), 1e-12) * Math.max(norm(F[b]), 1e-12)); };
+    return shares(sel, sel.map(function (c) { return cos(c, j); }));
+  }
+  function recommendFromItems(chosen) {
+    var D = state.D, n = D.catalogue.length;
+    var sel = chosen.slice().sort(function (a, b) { return a - b; });
+    var isChosen = {}; sel.forEach(function (c) { isChosen[c] = true; });
+    var out = {};
+    var pop = [];
+    for (var p = 0; p < n && pop.length < TOP_K; p++) if (!isChosen[p]) pop.push({ i: D.catalogue[p], w: [] });
+    out.popularity = pop;
+    ["itemknn", "itemknn_recency", "ease", "copurchase"].forEach(function (m) {
+      if (D.lists[m]) out[m] = neighbourRecs(D.lists[m], sel, n, null);
+    });
+    if (D.price_weight && D.lists.copurchase) out.copurchase_price = neighbourRecs(D.lists.copurchase, sel, n, D.price_weight);
 
     var A = D.als, F = A.factors, dim = F[0].length, w = A.alpha * Math.log1p(1);
     var M = A.gram.map(function (r, i) { return r.map(function (v, j) { return v + (i === j ? A.reg : 0); }); });
@@ -174,12 +235,19 @@ footer { margin-top: 28px; color: var(--muted); font-size: 0.85rem; max-width: 8
       if (isChosen[j]) return -Infinity;
       var s = 0; for (var i = 0; i < dim; i++) s += row[i] * pv[i]; return s;
     });
-    var norm = function (v) { return Math.sqrt(v.reduce(function (a, x) { return a + x * x; }, 0)) || 1e-12; };
-    var cos = function (a, c2) { var s = 0; for (var i = 0; i < dim; i++) s += F[a][i] * F[c2][i]; return s / (norm(F[a]) * norm(F[c2])); };
     out.als = byScoreDesc(sc).filter(function (j) { return isFinite(sc[j]); }).slice(0, TOP_K).map(function (j) {
-      var best = sel[0], bs = -Infinity;
-      sel.forEach(function (c) { var s = cos(c, j); if (s > bs) { bs = s; best = c; } });
-      return { i: cat[j], w: cat[best] };
+      return { i: j, w: unitCosShares(F, sel, j) };
+    });
+
+    var B = D.bpr, G = B.factors, mean = new Array(G[0].length).fill(0);
+    sel.forEach(function (c) { for (var d = 0; d < mean.length; d++) mean[d] += G[c][d]; });
+    for (var d2 = 0; d2 < mean.length; d2++) mean[d2] /= sel.length;
+    var sb = G.map(function (row, j) {
+      if (isChosen[j]) return -Infinity;
+      var s = 0; for (var d = 0; d < row.length; d++) s += row[d] * mean[d]; return s + B.bias[j];
+    });
+    out.bpr = byScoreDesc(sb).filter(function (j) { return isFinite(sb[j]); }).slice(0, TOP_K).map(function (j) {
+      return { i: j, w: unitCosShares(G, sel, j) };
     });
     return out;
   }
@@ -191,49 +259,96 @@ footer { margin-top: 28px; color: var(--muted); font-size: 0.85rem; max-width: 8
     if (text !== undefined) e.textContent = text;
     return e;
   }
+  function explanation(modelKey, rec, rank) {
+    var cfg = DATASETS[state.ds], box = el("div", "explain");
+    var sources = rec.w || [];
+    var lead = {
+      popularity: "A best seller: ranked number " + (rank + 1) + " among the most popular items in the training data. Everyone gets the same list, minus what they already have.",
+      itemknn: "People who picked the items below also tended to pick this one (cosine similarity of who picked what).",
+      itemknn_recency: "Same idea as item-based filtering, but recent activity counted for more than old activity when similarities and scores were computed.",
+      copurchase: "This item showed up in the same baskets as the items below, and the pair appeared often enough to pass the minimum support rule.",
+      copurchase_price: "Co-purchase scores first (this item showed up in the same baskets as the items below), then a business rule multiplied each score by a price factor.",
+      als: "Its learned taste factors point the same way as those of the items below, and it fits the profile built from them.",
+      ease: "A learned item-to-item weight links the items below to this one (a linear model solved in closed form).",
+      bpr: "The model learned to rank items like this one above items people did not pick; its factors are closest to the items below."
+    }[modelKey];
+    box.appendChild(el("p", null, lead));
+    if (sources.length) {
+      box.appendChild(el("p", "muted", cfg.source + ":"));
+      sources.forEach(function (s) {
+        var row = el("div", "src");
+        row.appendChild(el("span", null, nameOf(s[0])));
+        row.appendChild(el("span", "muted", Math.round(s[1] * 100) + "%"));
+        var track = el("span", "track"), fill = el("span", "fill");
+        fill.style.width = Math.round(s[1] * 100) + "%";
+        track.appendChild(fill); row.appendChild(track);
+        box.appendChild(row);
+      });
+      box.appendChild(el("p", "muted", "Shares show how much each item contributed to this suggestion among the top contributors."));
+    } else if (modelKey !== "popularity") {
+      box.appendChild(el("p", "muted", "Nothing in the history was close enough to explain this one, so it was filled in from the best sellers."));
+    }
+    if (modelKey === "copurchase_price" && rec.f !== undefined) {
+      var price = state.D.items[rec.i][2];
+      var effect = rec.f > 1.05 ? "boosted" : (rec.f < 0.95 ? "pushed down" : "left about unchanged");
+      box.appendChild(el("p", null, "Price rule: unit price " + (price === null ? "unknown" : "£" + price.toFixed(2)) +
+        " gave a factor of " + rec.f.toFixed(2) + ", which " + effect + " this item's position."));
+    }
+    return box;
+  }
   function renderResults(recs) {
     var root = $("results");
     root.textContent = "";
     if (!recs) {
-      root.appendChild(el("p", "empty", "Add one or more products to see recommendations."));
+      root.appendChild(el("p", "empty", "Add one or more items to see recommendations."));
       return;
     }
+    var cfg = DATASETS[state.ds];
     MODELS.forEach(function (m) {
+      if (!recs[m.key] || !state.enabled[m.key]) return;
       var card = el("section", "card");
       card.setAttribute("data-model", m.key);
       card.appendChild(el("h3", null, m.title));
       card.appendChild(el("p", "sub", m.sub));
       var ol = el("ol", "recs");
-      recs[m.key].forEach(function (r) {
+      recs[m.key].forEach(function (r, rank) {
         var li = el("li");
-        var body = el("div");
-        body.appendChild(el("div", "nm", nameOf(r.i)));
-        body.appendChild(el("div", "muted", "Product code " + codeOf(r.i)));
-        li.appendChild(body);
-        var why = el("div", "why");
-        if (m.key !== "popularity" && r.w !== null && r.w !== undefined) {
-          why.appendChild(document.createTextNode("Because you bought: "));
-          why.appendChild(el("b", null, nameOf(r.w)));
-        } else if (m.key === "popularity") {
-          why.textContent = "A best seller across all customers";
-        } else {
-          why.textContent = "Popular with shoppers overall";
-        }
-        li.appendChild(why);
+        var btn = el("button", "rec-btn");
+        btn.type = "button";
+        btn.setAttribute("aria-expanded", "false");
+        btn.appendChild(el("span", "rank", String(rank + 1)));
+        var body = el("span");
+        body.appendChild(el("span", "nm", nameOf(r.i)));
+        if (state.ds === "retail") body.appendChild(el("span", "code", "Product code " + codeOf(r.i)));
+        btn.appendChild(body);
+        btn.appendChild(el("span", "why-tag", "Why?"));
+        var panel = null;
+        btn.addEventListener("click", function () {
+          if (panel) {
+            li.removeChild(panel); panel = null; btn.setAttribute("aria-expanded", "false");
+          } else {
+            panel = explanation(m.key, r, rank); li.appendChild(panel); btn.setAttribute("aria-expanded", "true");
+          }
+        });
+        li.appendChild(btn);
         ol.appendChild(li);
       });
       card.appendChild(ol);
       root.appendChild(card);
     });
+    if (!root.firstChild) root.appendChild(el("p", "empty", "Select at least one recommender above."));
   }
 
-  // ---- customer mode ----
+  // ---- customer mode (retail only) ----
   var sel = $("customer");
-  D.customers.forEach(function (c, i) {
-    var o = el("option", null, c.label); o.value = String(i); sel.appendChild(o);
-  });
+  function fillCustomers() {
+    sel.textContent = "";
+    (state.D.customers || []).forEach(function (c, i) {
+      var o = el("option", null, c.label); o.value = String(i); sel.appendChild(o);
+    });
+  }
   function showCustomer() {
-    var c = D.customers[Number(sel.value)];
+    var c = state.D.customers[Number(sel.value)];
     $("customer-meta").textContent = "Bought " + c.n_products + " different products in the training period; the most recent are listed below.";
     var ul = $("history"); ul.textContent = "";
     c.history.forEach(function (i) { ul.appendChild(el("li", "chip", nameOf(i))); });
@@ -242,59 +357,136 @@ footer { margin-top: 28px; color: var(--muted); font-size: 0.85rem; max-width: 8
   sel.addEventListener("change", showCustomer);
 
   // ---- picker mode ----
-  var basket = [];
   function showBasket() {
     var ul = $("basket"); ul.textContent = "";
-    basket.forEach(function (i) {
+    state.basket.forEach(function (i) {
       var li = el("li", "chip");
       li.appendChild(document.createTextNode(nameOf(i)));
       var x = el("button", null, "×");
       x.type = "button"; x.setAttribute("aria-label", "Remove " + nameOf(i));
-      x.addEventListener("click", function () { basket = basket.filter(function (b) { return b !== i; }); showBasket(); });
+      x.addEventListener("click", function () { state.basket = state.basket.filter(function (b) { return b !== i; }); showBasket(); });
       li.appendChild(x);
       ul.appendChild(li);
     });
-    $("basket-count").textContent = "(" + basket.length + " of " + MAX_BASKET + ")";
-    renderResults(basket.length ? recommendFromItems(basket) : null);
+    $("basket-count").textContent = "(" + state.basket.length + " of " + MAX_BASKET + ")";
+    renderResults(state.basket.length ? recommendFromItems(state.basket) : null);
     showHits();
   }
   function showHits() {
     var q = $("search").value.trim().toLowerCase(), ul = $("hits");
     ul.textContent = "";
-    if (!q || basket.length >= MAX_BASKET) return;
-    var found = 0;
-    for (var i = 0; i < D.catalogue.length && found < 8; i++) {
-      if (basket.indexOf(i) !== -1) continue;
-      if (nameOf(i).toLowerCase().indexOf(q) !== -1 || codeOf(i).toLowerCase().indexOf(q) !== -1) {
+    if (!q || state.basket.length >= MAX_BASKET) return;
+    var found = 0, n = state.D.catalogue.length;
+    for (var i = 0; i < n && found < 8; i++) {
+      if (state.basket.indexOf(i) !== -1) continue;
+      if (nameOf(i).toLowerCase().indexOf(q) !== -1 || (state.ds === "retail" && codeOf(i).toLowerCase().indexOf(q) !== -1)) {
         found++;
-        var li = el("li"), b = el("button", null, nameOf(i) + "  (" + codeOf(i) + ")");
+        var li = el("li"), b = el("button", null, nameOf(i) + (state.ds === "retail" ? "  (" + codeOf(i) + ")" : ""));
         b.type = "button";
         b.addEventListener("click", (function (idx) { return function () {
-          basket.push(idx); $("search").value = ""; showBasket();
+          state.basket.push(idx); $("search").value = ""; showBasket();
         }; })(i));
         li.appendChild(b); ul.appendChild(li);
       }
     }
-    if (!found) ul.appendChild(el("li", "muted", "No matching products in the 800 most popular."));
+    if (!found) ul.appendChild(el("li", "muted", "No matching items among the " + n + " most popular."));
   }
   $("search").addEventListener("input", showHits);
-  $("example").addEventListener("click", function () { basket = D.selfcheck[1].chosen.slice(); showBasket(); });
-  $("clear").addEventListener("click", function () { basket = []; $("search").value = ""; showBasket(); });
 
-  // ---- tabs ----
+  function fillPresets() {
+    var row = $("presets"); row.textContent = "";
+    (state.D.presets || []).forEach(function (p) {
+      var b = el("button", "btn", p.label); b.type = "button";
+      b.addEventListener("click", function () { state.basket = p.chosen.slice(); showBasket(); });
+      row.appendChild(b);
+    });
+    var clear = el("button", "btn", "Clear"); clear.type = "button";
+    clear.addEventListener("click", function () { state.basket = []; $("search").value = ""; showBasket(); });
+    row.appendChild(clear);
+  }
+
+  // ---- model chooser ----
+  (function () {
+    var ul = $("model-list");
+    MODELS.forEach(function (m) {
+      var li = el("li"), lab = el("label"), cb = el("input");
+      cb.type = "checkbox"; cb.checked = true; cb.id = "model-" + m.key;
+      cb.addEventListener("change", function () { state.enabled[m.key] = cb.checked; refresh(); });
+      lab.appendChild(cb); lab.appendChild(document.createTextNode(m.title));
+      li.appendChild(lab); ul.appendChild(li);
+    });
+  })();
+  function syncModelList() {
+    MODELS.forEach(function (m) {
+      var present = !!(state.D.meta.models.indexOf(m.key) !== -1);
+      $("model-" + m.key).parentNode.parentNode.hidden = !present;
+    });
+  }
+
+  // ---- modes, datasets ----
+  function refresh() { if (state.mode === "customer" && state.D.customers && state.D.customers.length) showCustomer(); else showBasket(); }
   function setMode(mode) {
     var cust = mode === "customer";
+    state.mode = mode;
     $("tab-customer").setAttribute("aria-selected", String(cust));
     $("tab-picker").setAttribute("aria-selected", String(!cust));
     $("mode-customer").hidden = !cust;
     $("mode-picker").hidden = cust;
-    if (cust) showCustomer(); else showBasket();
+    refresh();
+  }
+  function applyDataset(key) {
+    var cfg = DATASETS[key];
+    state.ds = key; state.D = cfg.get(); state.basket = [];
+    Object.keys(DATASETS).forEach(function (k) { $(DATASETS[k].tab).setAttribute("aria-selected", String(k === key)); });
+    var hasCustomers = !!(state.D.customers && state.D.customers.length);
+    $("tab-customer").hidden = !hasCustomers;
+    $("search-label").textContent = cfg.search;
+    $("search").placeholder = cfg.placeholder; $("search").value = "";
+    $("basket-title").firstChild.nodeValue = cfg.basket + " ";
+    $("footer").textContent = "";
+    $("footer").appendChild(el("p", null, cfg.footer + " In picker mode the page recomputes suggestions in your browser from the " +
+      state.D.catalogue.length + " most popular items, using each item's nearest neighbours for the neighbourhood models and the exported factors for the factor models. Suggestions are illustrative."));
+    fillCustomers(); fillPresets(); syncModelList();
+    $("status").textContent = "";
+    setMode(hasCustomers ? "customer" : "picker");
+  }
+  function loadDataset(key) {
+    var cfg = DATASETS[key];
+    if (cfg.get()) { applyDataset(key); return; }
+    $("status").textContent = "Loading the " + (key === "books" ? "book" : "shop") + " data...";
+    var s = document.createElement("script");
+    s.src = cfg.file;
+    s.onload = function () { applyDataset(key); };
+    s.onerror = function () { $("status").textContent = "Could not load " + cfg.file + "."; };
+    document.head.appendChild(s);
   }
   $("tab-customer").addEventListener("click", function () { setMode("customer"); });
   $("tab-picker").addEventListener("click", function () { setMode("picker"); });
+  $("ds-retail").addEventListener("click", function () { loadDataset("retail"); });
+  $("ds-books").addEventListener("click", function () { loadDataset("books"); });
 
-  window.ecomDemo = { data: D, recommendFromItems: recommendFromItems };
-  setMode("customer");
+  // The same maths as the Python reference; compares against the numbers it produced when the data was built.
+  function selfCheck() {
+    var report = [];
+    Object.keys(DATASETS).forEach(function (key) {
+      var D = DATASETS[key].get();
+      if (!D) return;
+      var keep = state.D; state.D = D;
+      D.selfcheck.forEach(function (c, n) {
+        var got = recommendFromItems(c.chosen);
+        Object.keys(c.expected).forEach(function (m) {
+          var a = got[m].map(function (r) { return r.i; }).join(","), b = c.expected[m].map(function (r) { return r.i; }).join(",");
+          var wa = got[m].map(function (r) { return r.w.length ? r.w[0][0] : -1; }).join(","), wb = c.expected[m].map(function (r) { return r.w.length ? r.w[0][0] : -1; }).join(",");
+          report.push({ dataset: key, basket: n, model: m, itemsMatch: a === b, topSourceMatches: wa === wb });
+        });
+      });
+      state.D = keep;
+    });
+    return report;
+  }
+
+  window.ecomDemo = { state: state, recommendFromItems: recommendFromItems, selfCheck: selfCheck, loadDataset: loadDataset };
+  applyDataset("retail");
 })();
 </script>
 </body>

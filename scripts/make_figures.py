@@ -1,8 +1,9 @@
 """Draw the README figures from the committed run logs (JSON files in docs/runs/).
 
-    python scripts/make_figures.py --date 2026-10-14
+    python scripts/make_figures.py --date 2026-10-15 --retail-date 2026-10-14
 
-Reads <date>-study-<dataset>.json, <date>-coldstart-<dataset>.json and <date>-ab-simulation-retail.json and writes
+Reads <date>-study-<dataset>.json and <date>-coldstart-<dataset>.json for each dataset (the Online Retail II logs carry
+--retail-date, the Goodbooks-10k logs --date) and <retail-date>-ab-simulation-retail.json, and writes
 PNG files to docs/img/. Nothing is recomputed: every plotted number comes from those logs.
 """
 import argparse
@@ -45,13 +46,15 @@ def shared_legend(fig: plt.Figure, ax: plt.Axes) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--date", required=True)
+    parser.add_argument("--date", required=True, help="date of the Goodbooks-10k logs")
+    parser.add_argument("--retail-date", default=None, help="date of the Online Retail II logs (default: --date)")
     parser.add_argument("--runs", default=str(ROOT / "docs" / "runs"))
     parser.add_argument("--out", default=str(ROOT / "docs" / "img"))
     args = parser.parse_args()
     runs, out = Path(args.runs), Path(args.out)
+    dates = {"retail": args.retail_date or args.date, "books": args.date}
     out.mkdir(parents=True, exist_ok=True)
-    studies = {d: load(runs / f"{args.date}-study-{d}.json") for d in ("retail", "books")}
+    studies = {d: load(runs / f"{dates[d]}-study-{d}.json") for d in ("retail", "books")}
 
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.6), sharey=True)
     for ax, (d, s) in zip(axes, studies.items(), strict=True):
@@ -84,7 +87,7 @@ def main() -> int:
     fig.savefig(out / "accuracy-vs-novelty.png", dpi=130)
     plt.close(fig)
 
-    cold = {d: load(runs / f"{args.date}-coldstart-{d}.json") for d in ("retail", "books")}
+    cold = {d: load(runs / f"{dates[d]}-coldstart-{d}.json") for d in ("retail", "books")}
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.6))
     for ax, (d, c) in zip(axes, cold.items(), strict=True):
         keys = [str(n) for n in c["n_values"]] + ["full"]
@@ -102,7 +105,7 @@ def main() -> int:
     fig.savefig(out / "cold-start.png", dpi=130)
     plt.close(fig)
 
-    ab = load(runs / f"{args.date}-ab-simulation-retail.json")
+    ab = load(runs / f"{dates['retail']}-ab-simulation-retail.json")
     fig, ax = plt.subplots(figsize=(6, 4))
     ns = [c["n_per_arm"] for c in ab["power_curve"]]
     ax.plot(ns, [c["power_replay_effect"] * 100 for c in ab["power_curve"]], marker="o", color="#D55E00",
