@@ -95,13 +95,14 @@ def main() -> int:
 
     cat_cols = np.array([models["itemknn"].item_index[i] for i in pop.ranking[: CATALOGUE[args.dataset]]])
     block = np.ix_(cat_cols, cat_cols)
-    lists = {
-        "itemknn": top_neighbours(models["itemknn"].similarity[block], 40 if args.dataset == "retail" else N_NEIGHBOURS),
-        "ease": top_neighbours(models["ease"].weights[block], N_NEIGHBOURS),
-        "copurchase": top_neighbours(models["copurchase"].assoc[block], N_NEIGHBOURS),
+    n_knn = 40 if args.dataset == "retail" else N_NEIGHBOURS
+    sources = {
+        "itemknn": (lambda m: m.similarity, n_knn),
+        "itemknn_recency": (lambda m: m.similarity, N_NEIGHBOURS),
+        "ease": (lambda m: m.weights, N_NEIGHBOURS),
+        "copurchase": (lambda m: m.assoc, N_NEIGHBOURS),
     }
-    if "itemknn_recency" in models:
-        lists["itemknn_recency"] = top_neighbours(models["itemknn_recency"].similarity[block], N_NEIGHBOURS)
+    lists = {name: top_neighbours(get(models[name])[block], n) for name, (get, n) in sources.items() if name in models}
     als, bpr = models["als"], models["bpr"]
     data: dict[str, Any] = {
         "meta": {
