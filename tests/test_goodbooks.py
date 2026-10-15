@@ -69,7 +69,7 @@ def test_subset_drops_rarely_rated_items():
 
 def test_subset_larger_than_the_user_base_keeps_everyone():
     ratings = big_ratings(n_users=10)
-    assert goodbooks_interactions(ratings, n_users=1000, min_item_users=1)["user"].nunique() == 10
+    assert goodbooks_interactions(ratings, n_users=1000, min_item_users=1)["user"].nunique() == ratings["user_id"].nunique()
 
 
 def test_item_info_gives_titles(tmp_path):

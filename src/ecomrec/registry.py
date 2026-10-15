@@ -80,11 +80,23 @@ def make_model(name: str, params: dict[str, Any], seed: int = 0) -> Any:
     raise KeyError(name)
 
 
-def build_models(tuned: dict[str, Any], seed: int = 0, has_price: bool = True) -> list[Any]:
-    """All models in ``MODEL_ORDER`` with tuned settings (price-aware model skipped without prices)."""
+def excluded_models(has_price: bool = True, has_time: bool = True) -> set[str]:
+    """Models that cannot run on a dataset: the price rule needs prices, the recency model needs real time."""
+    out: set[str] = set()
+    if not has_price:
+        out.add("copurchase_price")
+    if not has_time:
+        out.add("itemknn_recency")
+    return out
+
+
+def build_models(tuned: dict[str, Any], seed: int = 0, has_price: bool = True,
+                 exclude: set[str] | None = None) -> list[Any]:
+    """All models in ``MODEL_ORDER`` with tuned settings, minus the excluded ones (price rule: needs prices)."""
+    skip = set(exclude or ()) | excluded_models(has_price=has_price)
     models = []
     for name in MODEL_ORDER:
-        if name == "copurchase_price" and not has_price:
+        if name in skip:
             continue
         params = tuned.get("models", {}).get(name, {}).get("params", GRIDS.get(name, {}).get("defaults", {}))
         models.append(make_model(name, dict(params), seed))
