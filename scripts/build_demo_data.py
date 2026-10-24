@@ -111,7 +111,7 @@ def main() -> int:
             "seed": args.seed,
             "models": list(models),
             "protocol": bundle.protocol_text,
-            "note": "Independent re-implementation on public data. Illustrative recommendations only.",
+            "note": "Independent study on public data. Illustrative recommendations only.",
         },
         "catalogue": list(range(len(pop.ranking[: CATALOGUE[args.dataset]]))),
         "lists": lists,

@@ -6,9 +6,9 @@
 
 ## Overview
 
-Recommendation approaches for an online store, with reported gains in user engagement and sales revenue. The reported gains (15% higher user engagement and a 10% improvement in sales revenue, as stated on the CV) come from an earlier deployment. They are labelled **Reported (earlier deployment)**: they are not reproduced, confirmed or contradicted by this repository, which has no access to that system, its data or its code.
+This study compares recommendation approaches for an online store on two public datasets (UCI Online Retail II and Goodbooks-10k) and measures offline accuracy, coverage, novelty and a revenue proxy on historical data. It makes no claim about any other system or deployment.
 
-This repository is an **independent re-implementation on public data**. It compares up to eight recommenders (popularity, item-based collaborative filtering, a recency-weighted variant, a co-purchase baseline with business rules, implicit-feedback ALS, EASE and BPR matrix factorisation) on two datasets, UCI Online Retail II and Goodbooks-10k (book ratings). Every model is tuned on a validation window inside the training period and reported once on an untouched test window, with bootstrap intervals over customers. Beyond accuracy it measures coverage, novelty, diversity, popularity bias, cold-start behaviour and an offline revenue proxy, and it includes a clearly labelled simulation of an A/B test. Everything reported is an offline measurement on historical data, not a business result.
+This repository is an **independent study on public data**. It compares up to eight recommenders (popularity, item-based collaborative filtering, a recency-weighted variant, a co-purchase baseline with business rules, implicit-feedback ALS, EASE and BPR matrix factorisation) on two datasets, UCI Online Retail II and Goodbooks-10k (book ratings). Every model is tuned on a validation window inside the training period and reported once on an untouched test window, with bootstrap intervals over customers. Beyond accuracy it measures coverage, novelty, diversity, popularity bias, cold-start behaviour and an offline revenue proxy, and it includes a clearly labelled simulation of an A/B test. Everything reported is an offline measurement on historical data, not a business result.
 
 ### Summary
 
@@ -24,11 +24,6 @@ Verified (Online Retail II: run 2026-10-14; Goodbooks-10k: run 2026-10-15), offl
 - **Revenue proxy (Online Retail II).** EASE: 2.07 GBP per customer against 1.49 for popularity (+39.1%, +26.6% to +53.6%). A price-aware re-ranking rule raises the proxy to 2.15 (+44.8%) but cuts the hit rate by 53%: it trades accuracy for price.
 - **Cold start is not solved.** With one to three known interactions, no personalised model is clearly better than popularity (intervals overlap); the models separate only with a longer history (see the cold-start section).
 - **The A/B simulation is a design aid, not a result.** It shows the sample size a real experiment would need; see its section and caveats.
-
-| Reported on the CV | Status |
-|---|---|
-| 15% higher user engagement | Reported (earlier deployment). Not reproduced here. |
-| 10% improvement in sales revenue | Reported (earlier deployment). Not reproduced here. |
 
 ![Popularity bias](docs/img/popularity-bias.png)
 
@@ -96,7 +91,7 @@ Raw data is never committed. The pseudonymous customer numbers of Online Retail 
 
 ## Results
 
-Independent re-implementation on public data. The 15% engagement and 10% revenue figures on the CV are Reported (earlier deployment) results and are not reproduced here. Everything below is an offline measurement on historical data (Verified; Online Retail II run 2026-10-14, Goodbooks-10k run 2026-10-15; Python 3.11, CPU only) and says nothing about live engagement or sales.
+Independent study on public data. Everything below is an offline measurement on historical data (Verified; Online Retail II run 2026-10-14, Goodbooks-10k run 2026-10-15; Python 3.11, CPU only). It says nothing about live engagement or sales, or about any other system or deployment.
 
 ### Accuracy (k = 10, test window, mean ± sd over 5 seeds where the model is seeded)
 
@@ -278,7 +273,7 @@ The same pipeline shape applies to "customers also bought" shelves on product pa
 
 ## Limitations
 
-- **Offline measurements only.** Hit rate, coverage, novelty and Revenue@10 are computed on historical data. They are not engagement or revenue in a live store, there has been no online experiment, and nothing here confirms or contradicts the 15% and 10% figures reported from the earlier deployment. The A/B section is a simulation under assumptions, not a result.
+- **Offline measurements only.** Hit rate, coverage, novelty and Revenue@10 are computed on historical data. They are not engagement or revenue in a live store, there has been no online experiment, and the results say nothing about any other system or deployment. The A/B section is a simulation under assumptions, not a result.
 - **Goodbooks-10k has no timestamps.** The temporal split uses the file order, which the dataset's documentation says is sorted by time; I could not verify that, so the "future" in this split is the author's claim. Because of that, the recency-weighted model is not evaluated there. The data is a seeded 8,000-user subset (to fit the CPU time limit), every rating of any value counts as an interaction, and it comes from Goodreads, so its users are book enthusiasts rather than shoppers.
 - **One split per dataset.** Seed variation and customer-sampling intervals are reported, but not variation across time windows. Retail seasonality: the test window covers the autumn peak.
 - **Tuning.** Grids are coarse and several selections sit on the edge of a grid (retail: co-purchase minimum support 5 and price exponent 1.5, ALS 64 factors / reg 1.0 / 15 iterations, BPR learning rate 0.02 / 64 factors / reg 0.01; books: ALS 64 factors / 10 iterations, BPR learning rate 0.05 / 64 factors / reg 0.01), so better settings may exist beyond the grid; the BPR epoch count and batch size were fixed. The tuning protocol is the same for every model but not every model has the same budget.
@@ -303,7 +298,7 @@ Rolling-window evaluation across several time periods; sequence models (GRU4Rec,
 - Steck, H. (2019). Embarrassingly shallow autoencoders for sparse data. *WWW*.
 - Rendle, S., Freudenthaler, C., Gantner, Z., Schmidt-Thieme, L. (2009). BPR: Bayesian personalized ranking from implicit feedback. *UAI*.
 
-To cite this repository: Ferdinant, J. R. (2026). *E-Commerce Recommendation: an independent re-implementation on public data* [Software]. https://github.com/Janeferdinant/ecommerce-recommender
+To cite this repository: Ferdinant, J. R. (2026). *E-Commerce Recommendation: an independent study on public data* [Software]. https://github.com/Janeferdinant/ecommerce-recommender
 
 ## License
 

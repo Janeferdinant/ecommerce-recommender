@@ -15,7 +15,7 @@ changes the ALS initialisation). Relative uplifts over the popularity baseline
 come with a 95% paired bootstrap interval over customers. Writes
 docs/runs/<date>-evaluation-multiseed.md and .json.
 
-These are offline proxies, not the deployed engagement and revenue gains.
+These are offline proxies, not measurements of live engagement or revenue.
 """
 import argparse
 import json
@@ -158,11 +158,10 @@ def main() -> int:
 
     log = f"""# Evaluation run {args.date} (multi-seed, with engagement and revenue proxies)
 
-Status: Verified (run {args.date}). Independent re-implementation on public data (UCI Online Retail II, CC BY 4.0).
+Status: Verified (run {args.date}). Independent study on public data (UCI Online Retail II, CC BY 4.0).
 
-**These are offline proxies computed on historical purchases. They are not the deployed engagement and revenue
-gains.** The 15% engagement and 10% revenue figures on the CV are Reported (earlier deployment) results and
-are not reproduced here.
+**These are offline proxies computed on historical purchases. They are not measurements of live engagement or
+revenue, and they make no claim about any other system or deployment.**
 
 - Started: {started.strftime('%Y-%m-%d %H:%M UTC')}
 - Command: `python scripts/run_evaluation.py --seeds {' '.join(map(str, args.seeds))}`
