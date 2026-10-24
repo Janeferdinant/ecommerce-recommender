@@ -2,8 +2,8 @@
 
 Besides Precision, Recall and NDCG, the harness computes three offline proxies:
 hit rate and catalogue coverage (engagement proxies) and Revenue@k (revenue
-proxy). They are measured on historical purchases and are not the deployed
-engagement and revenue gains.
+proxy). They are measured on historical purchases and are not measurements of
+live engagement or revenue.
 """
 from __future__ import annotations
 
